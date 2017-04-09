@@ -14,14 +14,21 @@ namespace TheElvenScrolls.Justification
         private const char Space = ' ';
         private const string DoubleSpace = "  ";
 
+        private readonly double _endingThresholdPercent;
+
+        private double _justifyLongerThan = 0;
+
         private IList<TextChunk> _textChunks;
 
-        public Justifier()
+        public Justifier(double endingThresholdPercent = 0.9)
         {
+            _endingThresholdPercent = endingThresholdPercent;
         }
 
         public string Justify(string text, int width)
         {
+            SetLastLineWidth(width);
+
             string result = string.Empty;
 
             text = RemoveMultipleSpaces(text);
@@ -36,6 +43,20 @@ namespace TheElvenScrolls.Justification
             result += " ________________________________\n";
 
             return result;
+        }
+
+        private void SetLastLineWidth(int width)
+        {
+            bool isInvalid = _endingThresholdPercent > 1.0 || _endingThresholdPercent < 0.0 || _endingThresholdPercent == 0.0;
+
+            if (isInvalid)
+            {
+                // TODO: Log warn
+                _justifyLongerThan = 0;
+                return;
+            }
+
+            _justifyLongerThan = width * _endingThresholdPercent;
         }
 
         private string RemoveMultipleSpaces(string text)
@@ -74,6 +95,7 @@ namespace TheElvenScrolls.Justification
                 foreach (var word in paragraph.Split(Space))
                 {
                     result.Add(new TextChunk(word, ChunkType.Word));
+
                     if (char.IsPunctuation(word.Substring(word.Length - 1)[0]))
                         result.Add(new TextChunk(DoubleSpace, ChunkType.Space));
                     else
@@ -105,7 +127,8 @@ namespace TheElvenScrolls.Justification
                 {
                     // justify line
                     //newLine.Add(chunk);
-                    lines.Add(JustifyLine(newLine, width));
+                    //lines.Add(JustifyLine(newLine, currentWidth, width));
+                    lines.Add(JustifyLastLine(newLine, currentWidth, width));
 
                     lines.Add(AddBlankLine(width));
 
@@ -114,7 +137,6 @@ namespace TheElvenScrolls.Justification
                     continue;
                 }
 
-
                 if (currentWidth + chunk.Text.Length > width)
                 {
                     // Skip spaces at the beginning of the line
@@ -122,7 +144,8 @@ namespace TheElvenScrolls.Justification
                         continue;
 
                     // justify line
-                    lines.Add(JustifyLine(newLine, width));
+                    //currentWidth += chunk.Text.Length;
+                    lines.Add(JustifyLine(newLine, currentWidth, width));
                     currentWidth = 0;
                     newLine = new List<TextChunk>();
                 }
@@ -145,7 +168,7 @@ namespace TheElvenScrolls.Justification
             return lines;
         }
 
-        private string JustifyLine(IList<TextChunk> lineChunks, int width)
+        private string JustifyLine(IList<TextChunk> lineChunks, int lineWidth, int width)
         {
             var result = string.Empty;
             if (lineChunks == null || lineChunks.Count == 0)
@@ -165,36 +188,17 @@ namespace TheElvenScrolls.Justification
             {
                 if (lineChunks[lineEndIdx].Type == ChunkType.Space
                     || lineChunks[0].Type == ChunkType.Space)
+                {
+                    lineWidth -= lineChunks[lineEndIdx].Text.Length;
                     lineChunks.RemoveAt(lineEndIdx);
+                }
             }
 
-            var lineWidth = 0;
             var spaceChunks = new List<TextChunk>();
             foreach (var chunk in lineChunks)
             {
                 if (chunk.Type == ChunkType.Space)
                     spaceChunks.Add(chunk);
-
-                if (chunk.Type != ChunkType.NewLine)
-                    lineWidth += chunk.Text.Length;
-            }
-
-            // TODO: Configuration
-            bool JustifyAboveHalfLine = true;
-            if (JustifyAboveHalfLine)
-            {
-                if (lineWidth < width / 2)
-                {
-                    foreach (var chunk in lineChunks)
-                    {
-                        result += chunk.Text;
-                    }
-
-                    while (result.Length < width)
-                        result += Space;
-
-                    return result;
-                }
             }
 
             if (spaceChunks.Count > 0)
@@ -214,6 +218,28 @@ namespace TheElvenScrolls.Justification
             }
 
             return result;
+        }
+
+        private string JustifyLastLine(IList<TextChunk> lineChunks, int lineWidth, int width)
+        {
+            var result = string.Empty;
+
+            if (lineWidth < _justifyLongerThan)
+            {
+                foreach (var chunk in lineChunks)
+                {
+                    result += chunk.Text;
+                }
+
+                while (result.Length < width)
+                    result += Space;
+
+                return result;
+            }
+            else
+            {
+                return JustifyLine(lineChunks, lineWidth, width);
+            }
         }
 
         private string AddBlankLine(int width)
