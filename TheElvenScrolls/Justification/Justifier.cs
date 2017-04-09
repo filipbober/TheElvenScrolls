@@ -7,8 +7,7 @@ namespace TheElvenScrolls.Justification
     class Justifier
     {
         // TODO: add newline as '\n' or '\n\r'
-        // TODO: indent at the beginning of paragraph
-        // TODO: Consider case when word is longer than line
+        // TODO: optional indent at the beginning of paragraph
 
         private const char NewLine = '\n';
         private const char Space = ' ';
@@ -33,7 +32,7 @@ namespace TheElvenScrolls.Justification
 
             text = RemoveMultipleSpaces(text);
 
-            _textChunks = CreateFragmentedText(text);
+            _textChunks = CreateFragmentedText(text, width);
 
             var lines = CreateJustifiedLines(width, _textChunks);
 
@@ -74,7 +73,7 @@ namespace TheElvenScrolls.Justification
             return result;
         }
 
-        private IList<TextChunk> CreateFragmentedText(string text)
+        private IList<TextChunk> CreateFragmentedText(string text, int width)
         {
             var result = new List<TextChunk>();
 
@@ -94,7 +93,20 @@ namespace TheElvenScrolls.Justification
 
                 foreach (var word in paragraph.Split(Space))
                 {
-                    result.Add(new TextChunk(word, ChunkType.Word));
+                    if (word.Length > width)
+                    {
+                        var currentIdx = 0;
+                        var lettersLeft = word.Length;
+                        while (lettersLeft > 0)
+                        {
+                            var tmpWord = word.Substring(currentIdx, Math.Min(width, lettersLeft));
+                            result.Add(new TextChunk(tmpWord, ChunkType.Word));
+                            lettersLeft -= tmpWord.Length;
+                            currentIdx += tmpWord.Length;
+                        }
+                    }
+                    else
+                        result.Add(new TextChunk(word, ChunkType.Word));
 
                     if (char.IsPunctuation(word.Substring(word.Length - 1)[0]))
                         result.Add(new TextChunk(DoubleSpace, ChunkType.Space));
@@ -108,8 +120,6 @@ namespace TheElvenScrolls.Justification
 
         private IList<string> CreateJustifiedLines(int width, IList<TextChunk> chunks)
         {
-            // TODO: Add case when word is longer than line
-
             var lines = new List<string>();
 
             var newLine = new List<TextChunk>();
@@ -125,13 +135,8 @@ namespace TheElvenScrolls.Justification
 
                 if (chunk.Type == ChunkType.NewLine)
                 {
-                    // justify line
-                    //newLine.Add(chunk);
-                    //lines.Add(JustifyLine(newLine, currentWidth, width));
                     lines.Add(JustifyLastLine(newLine, currentWidth, width));
-
                     lines.Add(AddBlankLine(width));
-
                     currentWidth = 0;
                     newLine = new List<TextChunk>();
                     continue;
@@ -143,18 +148,13 @@ namespace TheElvenScrolls.Justification
                     if (chunk.Type == ChunkType.Space)
                         continue;
 
-                    // justify line
-                    //currentWidth += chunk.Text.Length;
                     lines.Add(JustifyLine(newLine, currentWidth, width));
                     currentWidth = 0;
                     newLine = new List<TextChunk>();
                 }
 
-                // word fits line
                 if (currentWidth + chunk.Text.Length <= width)
                 {
-                    // TODO: Add case when there is '\n' forcing newline
-
                     newLine.Add(chunk);
                     currentWidth += chunk.Text.Length;
                 }
@@ -179,11 +179,7 @@ namespace TheElvenScrolls.Justification
                 return result;
             }
 
-            // TODO: Find better way to check if new line
             var lineEndIdx = lineChunks.Count - 1;
-            while (lineEndIdx > 0 && lineChunks[lineEndIdx].Type == ChunkType.NewLine)
-                lineEndIdx--;
-
             if (lineChunks.Count > 1)
             {
                 if (lineChunks[lineEndIdx].Type == ChunkType.Space
@@ -215,6 +211,11 @@ namespace TheElvenScrolls.Justification
                 {
                     result += chunk.Text;
                 }
+            }
+            else
+            {
+                // TODO: Log long line
+                result += lineChunks[0].Text;
             }
 
             return result;
