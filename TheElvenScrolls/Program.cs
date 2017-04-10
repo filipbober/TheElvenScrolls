@@ -1,4 +1,8 @@
-﻿using System;
+﻿// Copyright (C) 2017 Filip Cyrus Bober
+
+using Justifier;
+using Microsoft.Extensions.Logging;
+using System;
 
 namespace TheElvenScrolls
 {
@@ -6,7 +10,53 @@ namespace TheElvenScrolls
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            Console.WriteLine("Copyright (C) 2017 Filip Cyrus Bober");
+            Console.WriteLine("The Elven Scrolls ASCII letter generator");            
+
+            var text = @"Test justify paragraph
+
+Test justify paragraph
+
+Test justify paragraph
+
+LongLongLongLongLongLongLongLongLongLongLongLongLongLongLongLong Short Short
+
+Short Short LongLongLongLongLongLongLongLongLongLongLongLongLong Short Short
+
+Once         upon a midnight dreary, while I pondered, weak and weary,
+Over many a quaint and curious volume of forgotten lore,
+While I nodded, nearly napping, suddenly there came a tapping,
+As of someone gently rapping, tapping at my chamber door.
+'Tis some visitor, I muttered, tapping at my chamber door-
+Only this, and nothing more.
+
+Dwa slowa.
+
+Ah, distinctly I remember it was in a bleak December,
+And each separate dying ember wrought its ghost upon the floor.
+Eagerly I wished the morrow; -vainly I had sought to borrow
+From my books surcease of sorrow - sorrow for the lost Lenore -
+ For the rare and radiant maiden whom the angels name Lenore -
+ Nameless here for evermore.
+ ";
+            
+            Console.WriteLine("Raw text:");
+            Console.WriteLine(text);
+
+            LoggerFactory loggerFactory = new LoggerFactory();            
+            loggerFactory.AddConsole(LogLevel.Trace);
+            var logger = loggerFactory.CreateLogger<Program>();
+            logger.LogDebug("Test");
+
+            IJustifier justifier = new Justifier.Justifier(loggerFactory, new JustifierSettings());
+            var justified = justifier.Justify(text, 30);            
+
+            Console.WriteLine("----------------");
+
+            Console.WriteLine("Justified:");
+            Console.Write(justified);
+
+            Console.ReadKey();
         }
     }
 }
