@@ -18,7 +18,9 @@ Test justify paragraph
 
 Test justify paragraph
 
-LongLongLongLongLongLongLongLongLongLongLongLongLongLongLongLong
+LongLongLongLongLongLongLongLongLongLongLongLongLongLongLongLong Short Short
+
+Short Short LongLongLongLongLongLongLongLongLongLongLongLongLong Short Short
 
 Once         upon a midnight dreary, while I pondered, weak and weary,
 Over many a quaint and curious volume of forgotten lore,
@@ -40,7 +42,7 @@ From my books surcease of sorrow - sorrow for the lost Lenore -
             Console.WriteLine("Raw text:");
             Console.WriteLine(text);
 
-            var justifier = new Justifier();
+            var justifier = new Justifier(new JustifierSettings());
             var justified = justifier.Justify(text, 30);            
 
             Console.WriteLine("----------------");

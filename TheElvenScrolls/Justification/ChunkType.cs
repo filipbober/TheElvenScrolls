@@ -4,6 +4,7 @@
     {
         Word,
         Space,
-        NewLine
+        NewLine,
+        Paragraph
     }
 }

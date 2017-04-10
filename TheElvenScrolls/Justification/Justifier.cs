@@ -1,40 +1,42 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using TheElvenScrolls.Justification.Exceptions;
 
 namespace TheElvenScrolls.Justification
 {
-    class Justifier
+    class Justifier : IJustifier
     {
-        // TODO: add newline as '\n' or '\n\r'
-        // TODO: optional indent at the beginning of paragraph
-
         private const char NewLine = '\n';
         private const char Space = ' ';
         private const string DoubleSpace = "  ";
 
-        private readonly double _endingThresholdPercent;
+        private readonly JustifierSettings _settings;
 
         private double _justifyLongerThan = 0;
 
-        private IList<TextChunk> _textChunks;
-
-        public Justifier(double endingThresholdPercent = 0.9)
+        public Justifier(JustifierSettings settings)
         {
-            _endingThresholdPercent = endingThresholdPercent;
+            _settings = settings;
         }
 
         public string Justify(string text, int width)
         {
             SetLastLineWidth(width);
 
+            if (_settings.Paragraph.Length > width / 2)
+            {
+                // TODO: log error
+                throw new JustifierException("Paragraph is greater than half of the line width");
+            }
+
             string result = string.Empty;
 
             text = RemoveMultipleSpaces(text);
 
-            _textChunks = CreateFragmentedText(text, width);
+            var textChunks = CreateFragmentedText(text, width);
 
-            var lines = CreateJustifiedLines(width, _textChunks);
+            var lines = CreateJustifiedLines(width, textChunks);
 
             result += " ________________________________\n";
             foreach (var line in lines)
@@ -46,16 +48,15 @@ namespace TheElvenScrolls.Justification
 
         private void SetLastLineWidth(int width)
         {
-            bool isInvalid = _endingThresholdPercent > 1.0 || _endingThresholdPercent < 0.0 || _endingThresholdPercent == 0.0;
+            bool isInvalid = _settings.EndingThresholdPercent > 1.0 || _settings.EndingThresholdPercent < 0.0 || _settings.EndingThresholdPercent == 0.0;
 
             if (isInvalid)
             {
-                // TODO: Log warn
-                _justifyLongerThan = 0;
-                return;
+                // TODO: Log error
+                throw new JustifierException("Invalid line ending threshold percent");
             }
 
-            _justifyLongerThan = width * _endingThresholdPercent;
+            _justifyLongerThan = width * _settings.EndingThresholdPercent;
         }
 
         private string RemoveMultipleSpaces(string text)
@@ -83,26 +84,44 @@ namespace TheElvenScrolls.Justification
                 paragraphs.Add(paragraph);
             }
 
+            var firstWord = true;
             foreach (var paragraph in paragraphs)
             {
                 if (string.IsNullOrEmpty(paragraph))
                 {
                     result.Add(new TextChunk(NewLine, ChunkType.NewLine));
+
+                    if (_settings.IndentParagraphs)
+                        result.Add(new TextChunk(_settings.Paragraph, ChunkType.Paragraph));
+
+                    firstWord = true;
                     continue;
                 }
 
                 foreach (var word in paragraph.Split(Space))
-                {
+                {                   
                     if (word.Length > width)
                     {
+                        var lineWidth = width;
+                        if (_settings.IndentParagraphs && firstWord)
+                            lineWidth -= _settings.Paragraph.Length;
+
                         var currentIdx = 0;
                         var lettersLeft = word.Length;
                         while (lettersLeft > 0)
                         {
-                            var tmpWord = word.Substring(currentIdx, Math.Min(width, lettersLeft));
-                            result.Add(new TextChunk(tmpWord, ChunkType.Word));
-                            lettersLeft -= tmpWord.Length;
-                            currentIdx += tmpWord.Length;
+                            string shorterWord = string.Empty;
+                            if (_settings.PauseAfterLongWords && lettersLeft > lineWidth)
+                                shorterWord = word.Substring(currentIdx, lineWidth - _settings.Pause.Length) + _settings.Pause;
+                            else
+                                shorterWord = word.Substring(currentIdx, Math.Min(lineWidth, lettersLeft));
+
+                            result.Add(new TextChunk(shorterWord, ChunkType.Word));
+                            lettersLeft -= shorterWord.Length;
+                            currentIdx += shorterWord.Length;
+
+                            firstWord = false;
+                            lineWidth += _settings.Paragraph.Length;
                         }
                     }
                     else
@@ -112,6 +131,8 @@ namespace TheElvenScrolls.Justification
                         result.Add(new TextChunk(DoubleSpace, ChunkType.Space));
                     else
                         result.Add(new TextChunk(Space, ChunkType.Space));
+
+                    firstWord = false;
                 }
             }
 
@@ -215,7 +236,9 @@ namespace TheElvenScrolls.Justification
             else
             {
                 // TODO: Log long line
-                result += lineChunks[0].Text;
+                foreach (var chunk in lineChunks)
+                    result += chunk.Text;
+                //result += lineChunks[0].Text;
             }
 
             return result;
