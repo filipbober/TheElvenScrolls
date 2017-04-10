@@ -1,6 +1,6 @@
-﻿namespace TheElvenScrolls.Justification
+﻿namespace Justifier
 {
-    class TextChunk
+    internal class TextChunk
     {
         public string Text { get; set; }
         public ChunkType Type { get; set; }

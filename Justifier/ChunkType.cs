@@ -1,6 +1,6 @@
-﻿namespace TheElvenScrolls.Justification
+﻿namespace Justifier
 {
-    public enum ChunkType
+    internal enum ChunkType
     {
         Word,
         Space,

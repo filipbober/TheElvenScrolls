@@ -1,8 +1,8 @@
 ﻿// Copyright (C) 2017 Filip Cyrus Bober
 
+using Justifier;
 using Microsoft.Extensions.Logging;
 using System;
-using TheElvenScrolls.Justification;
 
 namespace TheElvenScrolls
 {
@@ -39,7 +39,7 @@ From my books surcease of sorrow - sorrow for the lost Lenore -
  For the rare and radiant maiden whom the angels name Lenore -
  Nameless here for evermore.
  ";
-
+            
             Console.WriteLine("Raw text:");
             Console.WriteLine(text);
 
@@ -48,7 +48,7 @@ From my books surcease of sorrow - sorrow for the lost Lenore -
             var logger = loggerFactory.CreateLogger<Program>();
             logger.LogDebug("Test");
 
-            var justifier = new Justifier(loggerFactory, new JustifierSettings());
+            IJustifier justifier = new Justifier.Justifier(loggerFactory, new JustifierSettings());
             var justified = justifier.Justify(text, 30);            
 
             Console.WriteLine("----------------");

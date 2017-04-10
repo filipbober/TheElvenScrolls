@@ -1,6 +1,6 @@
-﻿namespace TheElvenScrolls.Justification
+﻿namespace Justifier
 {
-    class JustifierSettings
+    public class JustifierSettings
     {
         public double EndingThresholdPercent { get; set; } = 0.9;
         public bool PauseAfterLongWords { get; set; } = true;

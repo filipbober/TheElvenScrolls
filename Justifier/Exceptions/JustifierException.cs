@@ -1,6 +1,6 @@
-﻿namespace TheElvenScrolls.Justification.Exceptions
+﻿namespace Justifier.Exceptions
 {
-    class JustifierException : System.Exception
+    public class JustifierException : System.Exception
     {
         public JustifierException()
         {

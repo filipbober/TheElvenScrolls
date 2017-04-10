@@ -2,11 +2,11 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using TheElvenScrolls.Justification.Exceptions;
+using Justifier.Exceptions;
 
-namespace TheElvenScrolls.Justification
+namespace Justifier
 {
-    class Justifier : IJustifier
+    public class Justifier : IJustifier
     {
         private const char NewLine = '\n';
         private const char Space = ' ';

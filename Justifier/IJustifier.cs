@@ -1,4 +1,4 @@
-﻿namespace TheElvenScrolls.Justification
+﻿namespace Justifier
 {
     public interface IJustifier
     {
