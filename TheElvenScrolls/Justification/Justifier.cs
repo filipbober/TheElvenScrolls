@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using TheElvenScrolls.Justification.Exceptions;
@@ -11,31 +12,31 @@ namespace TheElvenScrolls.Justification
         private const char Space = ' ';
         private const string DoubleSpace = "  ";
 
+        private readonly ILogger<Justifier> _logger;
         private readonly JustifierSettings _settings;
 
         private double _justifyLongerThan = 0;
 
-        public Justifier(JustifierSettings settings)
+        public Justifier(ILoggerFactory loggerFactory, JustifierSettings settings)
         {
+            _logger = loggerFactory.CreateLogger<Justifier>();
             _settings = settings;
         }
 
         public string Justify(string text, int width)
         {
+            _logger.LogInformation("Starting justification...");
             SetLastLineWidth(width);
 
-            if (_settings.Paragraph.Length > width / 2)
+            if (_settings.Paragraph.Length >= width / 2)
             {
-                // TODO: log error
-                throw new JustifierException("Paragraph is greater than half of the line width");
+                _logger.LogError("Paragraph must be less than half the line width");
+                throw new JustifierException("Invalid paragraph");
             }
 
             string result = string.Empty;
-
             text = RemoveMultipleSpaces(text);
-
             var textChunks = CreateFragmentedText(text, width);
-
             var lines = CreateJustifiedLines(width, textChunks);
 
             result += " ________________________________\n";
@@ -52,7 +53,7 @@ namespace TheElvenScrolls.Justification
 
             if (isInvalid)
             {
-                // TODO: Log error
+                _logger.LogError("Threshold percent must be withing 0.0 and 1.0");
                 throw new JustifierException("Invalid line ending threshold percent");
             }
 
@@ -61,6 +62,8 @@ namespace TheElvenScrolls.Justification
 
         private string RemoveMultipleSpaces(string text)
         {
+            _logger.LogDebug("Removing excess spaces");
+
             var tmp = Regex.Replace(text, @"[^\S\r\n]+", " ");
 
             string result = string.Empty;
@@ -76,6 +79,8 @@ namespace TheElvenScrolls.Justification
 
         private IList<TextChunk> CreateFragmentedText(string text, int width)
         {
+            _logger.LogDebug("Creating fragmented text");
+
             var result = new List<TextChunk>();
 
             var paragraphs = new List<string>();
@@ -141,6 +146,8 @@ namespace TheElvenScrolls.Justification
 
         private IList<string> CreateJustifiedLines(int width, IList<TextChunk> chunks)
         {
+            _logger.LogDebug("Creating justified lines");
+
             var lines = new List<string>();
 
             var newLine = new List<TextChunk>();
@@ -181,7 +188,7 @@ namespace TheElvenScrolls.Justification
                 }
                 else
                 {
-                    // TODO: Error
+                    _logger.LogError("Chunk cannot be processed: {0}", chunk.Text);                    
                     continue;
                 }
             }
@@ -234,11 +241,11 @@ namespace TheElvenScrolls.Justification
                 }
             }
             else
-            {
-                // TODO: Log long line
+            {                
                 foreach (var chunk in lineChunks)
                     result += chunk.Text;
-                //result += lineChunks[0].Text;
+
+                _logger.LogDebug("Long line: {0}", result);
             }
 
             return result;
@@ -271,15 +278,6 @@ namespace TheElvenScrolls.Justification
             var result = string.Empty;
 
             for (int i = 0; i < width; i++)
-                result += Space;
-
-            return result;
-        }
-
-        private string EndLine(string line, int current, int width)
-        {
-            var result = line;
-            for (int i = current + 1; i <= width; i++)
                 result += Space;
 
             return result;

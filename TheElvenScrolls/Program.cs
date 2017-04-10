@@ -1,5 +1,6 @@
 ﻿// Copyright (C) 2017 Filip Cyrus Bober
 
+using Microsoft.Extensions.Logging;
 using System;
 using TheElvenScrolls.Justification;
 
@@ -42,7 +43,12 @@ From my books surcease of sorrow - sorrow for the lost Lenore -
             Console.WriteLine("Raw text:");
             Console.WriteLine(text);
 
-            var justifier = new Justifier(new JustifierSettings());
+            LoggerFactory loggerFactory = new LoggerFactory();            
+            loggerFactory.AddConsole(LogLevel.Trace);
+            var logger = loggerFactory.CreateLogger<Program>();
+            logger.LogDebug("Test");
+
+            var justifier = new Justifier(loggerFactory, new JustifierSettings());
             var justified = justifier.Justify(text, 30);            
 
             Console.WriteLine("----------------");
