@@ -8,23 +8,5 @@
 
         public string Paragraph { get; set; } = "   ";
         public string Pause { get; set; } = "-";
-
-        public JustifierSettings(double endingThreshold, bool pauseAfterLongWords, bool indent, string paragraph, string pause)
-            : this(endingThreshold, pauseAfterLongWords, indent)
-        {
-            Paragraph = paragraph;
-            Pause = pause;
-        }
-
-        public JustifierSettings(double endingThreshold, bool pauseAfterLongWords, bool indent)
-        {
-            EndingThresholdPercent = endingThreshold;
-            PauseAfterLongWords = pauseAfterLongWords;
-            IndentParagraphs = indent;
-        }
-
-        public JustifierSettings()
-        {
-        }
     }
 }
