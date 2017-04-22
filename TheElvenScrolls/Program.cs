@@ -1,62 +1,46 @@
 ﻿// Copyright (C) 2017 Filip Cyrus Bober
 
 using Justifier;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System;
+using Microsoft.Extensions.Options;
+using System.IO;
 
 namespace TheElvenScrolls
 {
     class Program
     {
         static void Main(string[] args)
+        {            
+            var serviceCollection = new ServiceCollection();
+            ConfigureServices(serviceCollection);
+
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+
+            serviceProvider.GetService<App>().Run();
+        }
+
+        private static void ConfigureServices(IServiceCollection services)
         {
-            Console.WriteLine("Copyright (C) 2017 Filip Cyrus Bober");
-            Console.WriteLine("The Elven Scrolls ASCII letter generator");            
+            services.AddSingleton(new LoggerFactory()
+                .AddConsole());
+            services.AddLogging();
 
-            var text = @"Test justify paragraph
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: false)
+                .Build();
+            services.AddOptions();
 
-Test justify paragraph
+            services.Configure<AppSettings>(configuration);
 
-Test justify paragraph
+            services.Configure<JustifierSettings>(configuration.GetSection("justifierSettings"));
+            services.AddScoped(cfg => cfg.GetService<IOptionsSnapshot<JustifierSettings>>().Value);
 
-LongLongLongLongLongLongLongLongLongLongLongLongLongLongLongLong Short Short
+            services.AddTransient<IJustifier, Justifier.Justifier>();            
 
-Short Short LongLongLongLongLongLongLongLongLongLongLongLongLong Short Short
-
-Once         upon a midnight dreary, while I pondered, weak and weary,
-Over many a quaint and curious volume of forgotten lore,
-While I nodded, nearly napping, suddenly there came a tapping,
-As of someone gently rapping, tapping at my chamber door.
-'Tis some visitor, I muttered, tapping at my chamber door-
-Only this, and nothing more.
-
-Dwa slowa.
-
-Ah, distinctly I remember it was in a bleak December,
-And each separate dying ember wrought its ghost upon the floor.
-Eagerly I wished the morrow; -vainly I had sought to borrow
-From my books surcease of sorrow - sorrow for the lost Lenore -
- For the rare and radiant maiden whom the angels name Lenore -
- Nameless here for evermore.
- ";
-            
-            Console.WriteLine("Raw text:");
-            Console.WriteLine(text);
-
-            LoggerFactory loggerFactory = new LoggerFactory();            
-            loggerFactory.AddConsole(LogLevel.Trace);
-            var logger = loggerFactory.CreateLogger<Program>();
-            logger.LogDebug("Test");
-
-            IJustifier justifier = new Justifier.Justifier(loggerFactory, new JustifierSettings());
-            var justified = justifier.Justify(text, 30);            
-
-            Console.WriteLine("----------------");
-
-            Console.WriteLine("Justified:");
-            Console.Write(justified);
-
-            Console.ReadKey();
+            services.AddTransient<App>();
         }
     }
 }
