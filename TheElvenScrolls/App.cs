@@ -8,23 +8,21 @@ namespace TheElvenScrolls
     public class App
     {
         private readonly ILogger<App> _logger;
-        private readonly AppSettings _config;
+        private readonly AppSettings _settings;
         private readonly IJustifier _justifier;
 
         private readonly JustifierSettings _configTest;
 
-        public App(ILogger<App> logger, IOptions<AppSettings> config, IOptions<JustifierSettings> configTest, IJustifier justifier)
+        public App(ILogger<App> logger, IOptionsSnapshot<AppSettings> settings, IOptions<JustifierSettings> configTest, IJustifier justifier)
         {
             _logger = logger;
-            _config = config.Value;
+            _settings = settings.Value;
             _justifier = justifier;
             _configTest = configTest.Value;
         }
 
         public void Run()
         {
-            _logger.LogInformation("Starting...");
-
             Console.WriteLine("Copyright (C) 2017 Filip Cyrus Bober");
             Console.WriteLine("The Elven Scrolls ASCII letter generator");
 
@@ -67,6 +65,7 @@ namespace TheElvenScrolls
             Console.WriteLine("Justified:");
             Console.Write(justified);
 
+            _logger.LogInformation("Justification finished");
             Console.ReadKey();
         }
     }

@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Justifier.Exceptions;
-using Microsoft.Extensions.Options;
 
 namespace Justifier
 {
@@ -18,10 +17,10 @@ namespace Justifier
 
         private double _justifyLongerThan = 0;
 
-        public Justifier(ILoggerFactory loggerFactory, IOptions<JustifierSettings> settings)
+        public Justifier(ILoggerFactory loggerFactory, JustifierSettings settings)
         {
             _logger = loggerFactory.CreateLogger<Justifier>();
-            _settings = settings.Value;
+            _settings = settings;
         }
 
         public string Justify(string text, int width)

@@ -4,6 +4,7 @@ using Justifier;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.IO;
 
 namespace TheElvenScrolls
@@ -20,23 +21,26 @@ namespace TheElvenScrolls
             serviceProvider.GetService<App>().Run();
         }
 
-        private static void ConfigureServices(IServiceCollection serviceCollection)
+        private static void ConfigureServices(IServiceCollection services)
         {
-            serviceCollection.AddSingleton(new LoggerFactory()
+            services.AddSingleton(new LoggerFactory()
                 .AddConsole());
-            serviceCollection.AddLogging();
+            services.AddLogging();
 
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("AppSettings.json", optional: false)
+                .AddJsonFile("appsettings.json", optional: false)
                 .Build();
-            serviceCollection.AddOptions();
-            serviceCollection.Configure<AppSettings>(configuration.GetSection("Configuration"));
-            serviceCollection.Configure<JustifierSettings>(configuration.GetSection("JustifierSettings"));
+            services.AddOptions();
 
-            serviceCollection.AddTransient<IJustifier, Justifier.Justifier>();
+            services.Configure<AppSettings>(configuration);
 
-            serviceCollection.AddTransient<App>();
+            services.Configure<JustifierSettings>(configuration.GetSection("justifierSettings"));
+            services.AddScoped(cfg => cfg.GetService<IOptionsSnapshot<JustifierSettings>>().Value);
+
+            services.AddTransient<IJustifier, Justifier.Justifier>();            
+
+            services.AddTransient<App>();
         }
     }
 }
