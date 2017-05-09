@@ -68,9 +68,6 @@ namespace TheElvenScrolls
             services.Configure<JustifierSettings>(configuration.GetSection("justifierSettings"));
             services.AddScoped(cfg => cfg.GetService<IOptionsSnapshot<JustifierSettings>>().Value);
 
-            services.Configure<Template>(configuration.GetSection("template"));
-            services.AddScoped(cfg => cfg.GetService<IOptionsSnapshot<Template>>().Value);
-
             services.AddTransient<IJustifier, Justifier.Justifier>();
             services.AddTransient<ITemplater, Templater.Templater>();
 

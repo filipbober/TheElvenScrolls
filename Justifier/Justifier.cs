@@ -86,6 +86,14 @@ namespace Justifier
 
             var paragraphs = text.Split(NewLine).ToList();
 
+            for (int i = paragraphs.Count - 1; i > 0; i--)
+            {
+                if (string.IsNullOrEmpty(paragraphs[i]))
+                    paragraphs.RemoveAt(i);
+                else
+                    break;
+            }
+
             if (_settings.IndentParagraphs)
                 result.Add(new TextChunk(_settings.Paragraph, ChunkType.Paragraph));
 
@@ -153,7 +161,7 @@ namespace Justifier
             var newLine = new List<TextChunk>();
 
             var currentWidth = 0;
-            for (int i = 0; i < chunks.Count - 2; i++)
+            for (int i = 0; i < chunks.Count - 1; i++)
             {
                 var chunk = chunks[i];
 

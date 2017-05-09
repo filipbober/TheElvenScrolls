@@ -9,27 +9,18 @@ namespace Templater
     {
         private readonly ILogger<Templater> _logger;
 
-        private readonly Template _template;
-
-        public Templater(ILoggerFactory loggerFactory, Template template)
+        public Templater(ILoggerFactory loggerFactory)
         {
             _logger = loggerFactory.CreateLogger<Templater>();
-            _template = template;
         }
 
-        // TODO: Remove
-        public Templater(Template template)
-        {
-            _template = template;
-        }
-
-        public string CreateScroll(string text)
+        public string CreateScroll(string text, Template template)
         {
             var result = string.Empty;
 
-            var beginCapacity = ComputeCapacity(_template.Begin);
-            var middleCapacity = ComputeCapacity(_template.Middle);
-            var endCapacity = ComputeCapacity(_template.End);
+            var beginCapacity = ComputeCapacity(template.Fill, template.Begin);
+            var middleCapacity = ComputeCapacity(template.Fill, template.Middle);
+            var endCapacity = ComputeCapacity(template.Fill, template.End);
 
             if (beginCapacity != middleCapacity || middleCapacity != endCapacity)
             {
@@ -44,7 +35,7 @@ namespace Templater
             }
 
             var charsLeft = text.Length;
-            result += CreatePart(text, _template.Begin);
+            result += CreatePart(template.Fill, template.Blank, text, template.Begin);
             charsLeft -= beginCapacity;
             text = text.Substring(beginCapacity);
 
@@ -52,14 +43,14 @@ namespace Templater
             var endResult = string.Empty;
             if (charsLeft > 0)
             {
-                endResult += CreatePart(endText, _template.End);
+                endResult += CreatePart(template.Fill, template.Blank, endText, template.End);
                 charsLeft -= endCapacity;
             }
 
             text = text.Substring(0, charsLeft);
             while (charsLeft > 0)
             {
-                result += CreatePart(text, _template.Middle);
+                result += CreatePart(template.Fill, template.Blank, text, template.Middle);
                 text = text.Substring(Math.Min(middleCapacity, charsLeft));
 
                 charsLeft -= middleCapacity;
@@ -69,26 +60,26 @@ namespace Templater
             return result;
         }
 
-        private int ComputeCapacity(string part)
+        private int ComputeCapacity(char fill, string part)
         {
-            return part.Count(c => c == _template.Fill);
+            return part.Count(c => c == fill);
         }
 
-        private string CreatePart(string text, string templatePart)
+        private string CreatePart(char fill, char blank, string text, string templatePart)
         {
             var result = string.Empty;
             var current = 0;
 
             foreach (var c in templatePart)
             {
-                if (c != _template.Fill)
+                if (c != fill)
                 {
                     result += c;
                     continue;
                 }
 
                 if (current >= text.Length)
-                    result += _template.Blank;
+                    result += blank;
                 else
                     result += text[current++];
 

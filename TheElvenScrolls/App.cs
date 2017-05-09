@@ -3,6 +3,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices;
 using Templater;
 using Templater.Exceptions;
 
@@ -28,54 +30,63 @@ namespace TheElvenScrolls
             Console.WriteLine("Copyright (C) 2017 Filip Cyrus Bober");
             Console.WriteLine("The Elven Scrolls ASCII letter generator");
 
-            const string text = @"Test justify paragraph
-
-               Test justify paragraph
-
-            Test justify paragraph
-
-            LongLongLongLongLongLongLongLongLongLongLongLongLongLongLongLong Short Short
-
-            Short Short LongLongLongLongLongLongLongLongLongLongLongLongLong Short Short
-
-            Once         upon a midnight dreary, while I pondered, weak and weary,
-            Over many a quaint and curious volume of forgotten lore,
-            While I nodded, nearly napping, suddenly there came a tapping,
-            As of someone gently rapping, tapping at my chamber door.
-            'Tis some visitor, I muttered, tapping at my chamber door-
-            Only this, and nothing more.
-
-            Dwa slowa.
-
-            Ah, distinctly I remember it was in a bleak December,
-            And each separate dying ember wrought its ghost upon the floor.
-            Eagerly I wished the morrow; -vainly I had sought to borrow
-            From my books surcease of sorrow - sorrow for the lost Lenore -
-              For the rare and radiant maiden whom the angels name Lenore -
-            Nameless here for evermore.";
+            _logger.LogInformation("Reading text file");
+            var text = ReadInput(_settings.InputPath);
 
             Console.WriteLine("Raw text:");
             Console.WriteLine(text);
 
-            var justified = _justifier.Justify(text, 60);
+            Console.WriteLine("Reading template file");
+            var template = ReadTemplate(_settings.TemplatePath);
+            var lineWidth = template.Begin.Count(c => c == template.Fill);
+
+            var justified = _justifier.Justify(text, lineWidth);
             _logger.LogInformation("Justification finished");
             Console.Write(justified);
 
-            var scroll = _templater.CreateScroll(justified);
+            var scroll = _templater.CreateScroll(justified, template);
 
             _logger.LogInformation("Scroll ready");
             Console.Write(scroll);
-            // ---
 
-            Console.WriteLine("Reading template file");
-            var template = ReadTemplate(_settings.TemplatePath);
+            WriteOutput(_settings.OutputPath, scroll);
+            // ---
         }
 
-        private Template ReadTemplate(string templatePath)
+        private string ReadInput(string path)
         {
-            Console.WriteLine(Directory.GetCurrentDirectory());
+            if (!File.Exists(path))
+            {
+                _logger.LogError("Specified path is not a valid input text file");
+                throw new FileNotFoundException("Input file not found");
+            }
 
-            if (!File.Exists(templatePath))
+            if (_settings.InputPath == _settings.OutputPath)
+            {
+                _logger.LogWarning("Replacing intput file with output scroll");
+                // TODO: check if file not in use
+                // TODO: Allow writing to the same file as output.
+            }
+
+            var result = string.Empty;
+
+            var fileStream = new FileStream(path, FileMode.Open);
+            using (var reader = new StreamReader(fileStream))
+            {
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    line = line.Replace("\r", "");
+                    result += line + "\n";
+                }
+            }
+
+            return result;
+        }
+
+        private Template ReadTemplate(string path)
+        {
+            if (!File.Exists(path))
             {
                 _logger.LogError("Specified path is not a valid template file");
                 throw new FileNotFoundException("Template not found");
@@ -83,14 +94,14 @@ namespace TheElvenScrolls
 
             var template = new Template();
 
-            var fileStream = new FileStream(templatePath, FileMode.Open);
+            var fileStream = new FileStream(path, FileMode.Open);
             using (var reader = new StreamReader(fileStream))
             {
-                const string fillConfigPattern = "Fill=";
-                const string blankConfigPattern = "Blank=";
+                var fillConfigPattern = _settings.TemplateFileSettings.FillConfigPattern;
+                var blankConfigPattern = _settings.TemplateFileSettings.BlankConfigPattern;
 
                 string line;
-                while (!string.IsNullOrWhiteSpace(line = reader.ReadLine()))
+                while ((line = reader.ReadLine()) != null && !SeparatorEncountered(line))
                 {
                     if (line.StartsWith(fillConfigPattern))
                         template.Fill = line.Substring(fillConfigPattern.Length, 1)[0];
@@ -98,25 +109,22 @@ namespace TheElvenScrolls
                         template.Blank = line.Substring(blankConfigPattern.Length, 1)[0];
                 }
 
-                // TODO: Check if empty line after config is skipped
-                // TODO: Check if new lines are needed
-
                 template.Begin = string.Empty;
-                while (!string.IsNullOrEmpty(line = reader.ReadLine()))
+                while ((line = reader.ReadLine()) != null && !SeparatorEncountered(line))
                 {
-                    template.Begin += line;
+                    template.Begin += line + "\n";
                 }
 
                 template.Middle = string.Empty;
-                while (!string.IsNullOrEmpty(line = reader.ReadLine()))
+                while ((line = reader.ReadLine()) != null && !SeparatorEncountered(line))
                 {
-                    template.Middle += line;
+                    template.Middle += line + "\n";
                 }
 
                 template.End = string.Empty;
-                while (!string.IsNullOrEmpty(line = reader.ReadLine()))
+                while ((line = reader.ReadLine()) != null && !SeparatorEncountered(line))
                 {
-                    template.End += line;
+                    template.End += line + "\n";
                 }
 
             }
@@ -124,6 +132,16 @@ namespace TheElvenScrolls
             ValidateTemplate(template);
 
             return template;
+        }
+
+        private bool SeparatorEncountered(string line)
+        {
+            var separator = _settings.TemplateFileSettings.PartSeparatorPattern;
+
+            if (line == separator)
+                return true;
+
+            return line.Length == separator.Length && line.StartsWith(separator);
         }
 
         private void ValidateTemplate(Template template)
@@ -162,6 +180,15 @@ namespace TheElvenScrolls
 
             if (!valid)
                 throw new TemplaterException("Invalid template");
+        }
+
+        private void WriteOutput(string path, string scroll)
+        {
+            var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+            if (isWindows)
+                scroll = scroll.Replace("\n", "\r\n");
+
+            File.WriteAllText(path, scroll);
         }
 
     }

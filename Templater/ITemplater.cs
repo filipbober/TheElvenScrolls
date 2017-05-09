@@ -2,6 +2,6 @@
 {
     public interface ITemplater
     {
-        string CreateScroll(string text);
+        string CreateScroll(string text, Template template);
     }
 }
