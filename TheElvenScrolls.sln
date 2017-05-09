@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TheElvenScrolls", "TheElven
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Justifier", "Justifier\Justifier.csproj", "{F9763956-B286-4AB4-9D11-D260AE405081}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Templater", "Templater\Templater.csproj", "{49876297-DEEF-4958-BFCB-B5A674B6170C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{F9763956-B286-4AB4-9D11-D260AE405081}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F9763956-B286-4AB4-9D11-D260AE405081}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F9763956-B286-4AB4-9D11-D260AE405081}.Release|Any CPU.Build.0 = Release|Any CPU
+		{49876297-DEEF-4958-BFCB-B5A674B6170C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{49876297-DEEF-4958-BFCB-B5A674B6170C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{49876297-DEEF-4958-BFCB-B5A674B6170C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{49876297-DEEF-4958-BFCB-B5A674B6170C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

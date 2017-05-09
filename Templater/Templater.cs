@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Linq;
 using Microsoft.Extensions.Logging;
+using Templater.Exceptions;
 
-namespace TheElvenScrolls
+namespace Templater
 {
-    internal class Templater
+    public class Templater : ITemplater
     {
         private readonly ILogger<Templater> _logger;
 
@@ -30,11 +31,16 @@ namespace TheElvenScrolls
             var middleCapacity = ComputeCapacity(_template.Middle);
             var endCapacity = ComputeCapacity(_template.End);
 
+            if (beginCapacity != middleCapacity || middleCapacity != endCapacity)
+            {
+                _logger.LogError("Template begin, middle and end fill space must be equal");
+                throw new TemplaterException("Template parts fill space is not equal");
+            }
+
             if (middleCapacity < 1)
             {
-                _logger.LogError("Template body must have filling space");
-                // TODO: throw exception
-                return result;
+                _logger.LogError("Template middle part must have filling space");
+                throw new TemplaterException("Fill space not found in template middle part");
             }
 
             var charsLeft = text.Length;

@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Justifier\Justifier.csproj" />
+    <ProjectReference Include="..\Templater\Templater.csproj" />
   </ItemGroup>
 
   <ItemGroup>

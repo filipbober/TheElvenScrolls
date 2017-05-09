@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
+using Templater;
 
 namespace TheElvenScrolls
 {
@@ -10,14 +11,16 @@ namespace TheElvenScrolls
         private readonly ILogger<App> _logger;
         private readonly AppSettings _settings;
         private readonly IJustifier _justifier;
+        private readonly ITemplater _templater;
 
         private readonly JustifierSettings _configTest;
 
-        public App(ILogger<App> logger, IOptionsSnapshot<AppSettings> settings, IOptions<JustifierSettings> configTest, IJustifier justifier)
+        public App(ILogger<App> logger, IOptionsSnapshot<AppSettings> settings, IOptions<JustifierSettings> configTest, IJustifier justifier, ITemplater templater)
         {
             _logger = logger;
             _settings = settings.Value;
             _justifier = justifier;
+            _templater = templater;
             _configTest = configTest.Value;
         }
 
@@ -26,7 +29,7 @@ namespace TheElvenScrolls
             Console.WriteLine("Copyright (C) 2017 Filip Cyrus Bober");
             Console.WriteLine("The Elven Scrolls ASCII letter generator");
 
-            var text = @"Test justify paragraph
+            const string text = @"Test justify paragraph
 
                Test justify paragraph
 
@@ -55,34 +58,13 @@ namespace TheElvenScrolls
             Console.WriteLine("Raw text:");
             Console.WriteLine(text);
 
-            _logger.LogDebug("Test");
-
-            //var justified = _justifier.Justify(text, 30);
-
-            //Console.WriteLine("----------------");
-
-            //Console.WriteLine("Justified:");
-            //Console.Write(justified);
-
+            var justified = _justifier.Justify(text, 60);
             _logger.LogInformation("Justification finished");
+            Console.Write(justified);
 
-            // ---
-            Template template = new Template();
-            template.Fill = '+';
-            template.Blank = '_';
-            template.Begin =  "   ______________________________________________________________ \n" +
-                              "  | ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ |\n";
-            template.Middle = "-=| ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ |=-\n";
-            template.End =    " e| ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ |e\n" +
-                              "  ---------------------------------------------------------------\n";
+            var scroll = _templater.CreateScroll(justified);
 
-            Templater templater = new Templater(template);
-
-            var justified2 = _justifier.Justify(text, 60);
-            Console.WriteLine("------------------");
-            Console.Write(justified2);
-            var scroll = templater.CreateScroll(justified2);
-            Console.WriteLine("------------------");
+            _logger.LogInformation("Scroll ready");
             Console.Write(scroll);
             // ---
 

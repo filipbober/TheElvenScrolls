@@ -42,21 +42,11 @@ namespace Justifier
 
             SetJustifyWidthThreshold(width);
 
-            string result = string.Empty;
             text = RemoveMultipleSpaces(text);
             var textChunks = CreateFragmentedText(text, width);
             var lines = CreateJustifiedLines(width, textChunks);
 
-            //result += " ________________________________\n";
-            //foreach (var line in lines)
-            //    result += "| " + line + " |\n";
-            //result += " ________________________________\n";
-
-            return lines.Aggregate(result, (current, line) => current + (line));
-            //foreach (var line in lines)
-            //    result += line + "\n";
-
-            //return result;
+            return lines.Aggregate((current, line) => current + (line));
         }
 
         private void SetJustifyWidthThreshold(int width)
@@ -163,8 +153,7 @@ namespace Justifier
             var newLine = new List<TextChunk>();
 
             var currentWidth = 0;
-            //foreach (var chunk in chunks)
-            for (int i = 0; i < chunks.Count - 1; i++)
+            for (int i = 0; i < chunks.Count - 2; i++)
             {
                 var chunk = chunks[i];
 
@@ -205,8 +194,6 @@ namespace Justifier
                 }
             }
 
-            // Remove empty line at the end
-            //lines.RemoveAt(lines.Count - 1);
             lines.Add(JustifyLastLine(newLine, currentWidth, width));
 
             return lines;
@@ -234,16 +221,11 @@ namespace Justifier
                 }
             }
 
-            var spaceChunks = new List<TextChunk>();
-            foreach (var chunk in lineChunks)
-            {
-                if (chunk.Type == ChunkType.Space)
-                    spaceChunks.Add(chunk);
-            }
+            var spaceChunks = lineChunks.Where(chunk => chunk.Type == ChunkType.Space).ToList();
 
             if (spaceChunks.Count > 0)
             {
-                Random rnd = new Random();
+                var rnd = new Random();
                 while (lineWidth < width)
                 {
                     var idx = rnd.Next(spaceChunks.Count);
@@ -271,23 +253,21 @@ namespace Justifier
         {
             var result = string.Empty;
 
-            if (lineWidth < _justifyLongerThan)
+            if (!(lineWidth < _justifyLongerThan))
+                return JustifyLine(lineChunks, lineWidth, width);
+
+            foreach (var chunk in lineChunks)
             {
-                foreach (var chunk in lineChunks)
-                {
-                    result += chunk.Text;
-                }
-
-                while (result.Length < width)
-                    result += Space;
-
-                return result;
+                result += chunk.Text;
             }
 
-            return JustifyLine(lineChunks, lineWidth, width);
+            while (result.Length < width)
+                result += Space;
+
+            return result;
         }
 
-        private string AddBlankLine(int width)
+        private static string AddBlankLine(int width)
         {
             var result = string.Empty;
 
