@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using Justifier.Exceptions;
 
@@ -15,7 +16,7 @@ namespace Justifier
         private readonly ILogger<Justifier> _logger;
         private readonly JustifierSettings _settings;
 
-        private double _justifyLongerThan = 0;
+        private double _justifyLongerThan;
 
         public Justifier(ILoggerFactory loggerFactory, JustifierSettings settings)
         {
@@ -26,7 +27,12 @@ namespace Justifier
         public string Justify(string text, int width)
         {
             _logger.LogInformation("Starting justification...");
-            SetLastLineWidth(width);
+
+            if (text.Length < 1)
+            {
+                _logger.LogWarning("Text is empty");
+                return string.Empty;
+            }
 
             if (_settings.Paragraph.Length >= width / 2)
             {
@@ -34,26 +40,31 @@ namespace Justifier
                 throw new JustifierException("Invalid paragraph");
             }
 
+            SetJustifyWidthThreshold(width);
+
             string result = string.Empty;
             text = RemoveMultipleSpaces(text);
             var textChunks = CreateFragmentedText(text, width);
             var lines = CreateJustifiedLines(width, textChunks);
 
-            result += " ________________________________\n";
-            foreach (var line in lines)
-                result += "| " + line + " |\n";
-            result += " ________________________________\n";
+            //result += " ________________________________\n";
+            //foreach (var line in lines)
+            //    result += "| " + line + " |\n";
+            //result += " ________________________________\n";
 
-            return result;
+            return lines.Aggregate(result, (current, line) => current + (line));
+            //foreach (var line in lines)
+            //    result += line + "\n";
+
+            //return result;
         }
 
-        private void SetLastLineWidth(int width)
+        private void SetJustifyWidthThreshold(int width)
         {
-            bool isInvalid = _settings.EndingThresholdPercent > 1.0 || _settings.EndingThresholdPercent < 0.0 || _settings.EndingThresholdPercent == 0.0;
-
+            var isInvalid = _settings.EndingThresholdPercent > 1.0 || _settings.EndingThresholdPercent < 0.0;
             if (isInvalid)
             {
-                _logger.LogError("Threshold percent must be withing 0.0 and 1.0");
+                _logger.LogError("Threshold percent must be within 0.0 and 1.0");
                 throw new JustifierException("Invalid line ending threshold percent");
             }
 
@@ -83,11 +94,10 @@ namespace Justifier
 
             var result = new List<TextChunk>();
 
-            var paragraphs = new List<string>();
-            foreach (var paragraph in text.Split(NewLine))
-            {
-                paragraphs.Add(paragraph);
-            }
+            var paragraphs = text.Split(NewLine).ToList();
+
+            if (_settings.IndentParagraphs)
+                result.Add(new TextChunk(_settings.Paragraph, ChunkType.Paragraph));
 
             var firstWord = true;
             foreach (var paragraph in paragraphs)
@@ -104,7 +114,7 @@ namespace Justifier
                 }
 
                 foreach (var word in paragraph.Split(Space))
-                {                   
+                {
                     if (word.Length > width)
                     {
                         var lineWidth = width;
@@ -115,7 +125,7 @@ namespace Justifier
                         var lettersLeft = word.Length;
                         while (lettersLeft > 0)
                         {
-                            string shorterWord = string.Empty;
+                            string shorterWord;
                             if (_settings.PauseAfterLongWords && lettersLeft > lineWidth)
                                 shorterWord = word.Substring(currentIdx, lineWidth - _settings.Pause.Length) + _settings.Pause;
                             else
@@ -125,17 +135,14 @@ namespace Justifier
                             lettersLeft -= shorterWord.Length;
                             currentIdx += shorterWord.Length;
 
-                            firstWord = false;
                             lineWidth += _settings.Paragraph.Length;
                         }
                     }
                     else
                         result.Add(new TextChunk(word, ChunkType.Word));
 
-                    if (char.IsPunctuation(word.Substring(word.Length - 1)[0]))
-                        result.Add(new TextChunk(DoubleSpace, ChunkType.Space));
-                    else
-                        result.Add(new TextChunk(Space, ChunkType.Space));
+                    var endsWithPunctuation = char.IsPunctuation(word.Substring(word.Length - 1)[0]);
+                    result.Add(endsWithPunctuation ? new TextChunk(DoubleSpace, ChunkType.Space) : new TextChunk(Space, ChunkType.Space));
 
                     firstWord = false;
                 }
@@ -148,13 +155,19 @@ namespace Justifier
         {
             _logger.LogDebug("Creating justified lines");
 
+            if (chunks.Count < 1)
+                return new List<string>();
+
             var lines = new List<string>();
 
             var newLine = new List<TextChunk>();
 
             var currentWidth = 0;
-            foreach (var chunk in chunks)
+            //foreach (var chunk in chunks)
+            for (int i = 0; i < chunks.Count - 1; i++)
             {
+                var chunk = chunks[i];
+
                 if (currentWidth == 0)
                 {
                     if (chunk.Type == ChunkType.Space)
@@ -188,10 +201,13 @@ namespace Justifier
                 }
                 else
                 {
-                    _logger.LogError("Chunk cannot be processed: {0}", chunk.Text);                    
-                    continue;
+                    _logger.LogError("Chunk cannot be processed: {0}", chunk.Text);
                 }
             }
+
+            // Remove empty line at the end
+            //lines.RemoveAt(lines.Count - 1);
+            lines.Add(JustifyLastLine(newLine, currentWidth, width));
 
             return lines;
         }
@@ -241,7 +257,7 @@ namespace Justifier
                 }
             }
             else
-            {                
+            {
                 foreach (var chunk in lineChunks)
                     result += chunk.Text;
 
@@ -267,10 +283,8 @@ namespace Justifier
 
                 return result;
             }
-            else
-            {
-                return JustifyLine(lineChunks, lineWidth, width);
-            }
+
+            return JustifyLine(lineChunks, lineWidth, width);
         }
 
         private string AddBlankLine(int width)

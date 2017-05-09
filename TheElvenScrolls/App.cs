@@ -28,7 +28,7 @@ namespace TheElvenScrolls
 
             var text = @"Test justify paragraph
 
-            Test justify paragraph
+               Test justify paragraph
 
             Test justify paragraph
 
@@ -49,23 +49,43 @@ namespace TheElvenScrolls
             And each separate dying ember wrought its ghost upon the floor.
             Eagerly I wished the morrow; -vainly I had sought to borrow
             From my books surcease of sorrow - sorrow for the lost Lenore -
-             For the rare and radiant maiden whom the angels name Lenore -
-             Nameless here for evermore.
-             ";
+              For the rare and radiant maiden whom the angels name Lenore -
+            Nameless here for evermore.";
 
             Console.WriteLine("Raw text:");
             Console.WriteLine(text);
 
             _logger.LogDebug("Test");
 
-            var justified = _justifier.Justify(text, 30);
+            //var justified = _justifier.Justify(text, 30);
 
-            Console.WriteLine("----------------");
+            //Console.WriteLine("----------------");
 
-            Console.WriteLine("Justified:");
-            Console.Write(justified);
+            //Console.WriteLine("Justified:");
+            //Console.Write(justified);
 
             _logger.LogInformation("Justification finished");
+
+            // ---
+            Template template = new Template();
+            template.Fill = '+';
+            template.Blank = '_';
+            template.Begin =  "   ______________________________________________________________ \n" +
+                              "  | ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ |\n";
+            template.Middle = "-=| ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ |=-\n";
+            template.End =    " e| ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ |e\n" +
+                              "  ---------------------------------------------------------------\n";
+
+            Templater templater = new Templater(template);
+
+            var justified2 = _justifier.Justify(text, 60);
+            Console.WriteLine("------------------");
+            Console.Write(justified2);
+            var scroll = templater.CreateScroll(justified2);
+            Console.WriteLine("------------------");
+            Console.Write(scroll);
+            // ---
+
             Console.ReadKey();
         }
     }

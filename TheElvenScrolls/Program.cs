@@ -1,5 +1,6 @@
 ﻿// Copyright (C) 2017 Filip Cyrus Bober
 
+using System.Globalization;
 using Justifier;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,7 +13,10 @@ namespace TheElvenScrolls
     class Program
     {
         static void Main(string[] args)
-        {            
+        {
+            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+            CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
+
             var serviceCollection = new ServiceCollection();
             ConfigureServices(serviceCollection);
 
@@ -38,7 +42,7 @@ namespace TheElvenScrolls
             services.Configure<JustifierSettings>(configuration.GetSection("justifierSettings"));
             services.AddScoped(cfg => cfg.GetService<IOptionsSnapshot<JustifierSettings>>().Value);
 
-            services.AddTransient<IJustifier, Justifier.Justifier>();            
+            services.AddTransient<IJustifier, Justifier.Justifier>();
 
             services.AddTransient<App>();
         }
