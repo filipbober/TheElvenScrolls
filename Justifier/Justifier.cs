@@ -13,7 +13,7 @@ namespace Justifier
         private const char Space = ' ';
         private const string DoubleSpace = "  ";
 
-        private readonly ILogger<Justifier> _logger;
+        private readonly ILogger _logger;
         private readonly JustifierSettings _settings;
 
         private double _justifyLongerThan;

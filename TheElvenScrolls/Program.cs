@@ -34,15 +34,15 @@ namespace TheElvenScrolls
             }
             catch (JustifierException ex)
             {
-                Logger.LogCritical(-1, ex, "Creating scroll failed due to Justifier exception");
+                Logger.LogCritical(-2, ex, "Creating scroll failed due to Justifier exception");
             }
             catch (TemplaterException ex)
             {
-                Logger.LogCritical(-1, ex, "Creating scroll failed due to Templater exception");
+                Logger.LogCritical(-3, ex, "Creating scroll failed due to Templater exception");
             }
             catch (FileNotFoundException ex)
             {
-                Logger.LogCritical(-1, ex, "File not found");
+                Logger.LogCritical(-4, ex, "File not found");
             }
             catch (Exception ex)
             {
@@ -68,8 +68,14 @@ namespace TheElvenScrolls
             services.Configure<JustifierSettings>(configuration.GetSection("justifierSettings"));
             services.AddScoped(cfg => cfg.GetService<IOptionsSnapshot<JustifierSettings>>().Value);
 
+            services.Configure<TemplateFileSettings>(configuration.GetSection("templateFileSettings"));
+            services.AddScoped(cfg => cfg.GetService<IOptionsSnapshot<TemplateFileSettings>>().Value);
+
             services.AddTransient<IJustifier, Justifier.Justifier>();
             services.AddTransient<ITemplater, Templater.Templater>();
+            services.AddTransient<IInputReader, InputReader>();
+            services.AddTransient<ITemplateReader, TemplateReader>();
+            services.AddTransient<IScrollWriter, ScrollWriter>();
 
             services.AddTransient<App>();
         }

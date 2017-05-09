@@ -7,11 +7,11 @@ namespace Templater
 {
     public class Templater : ITemplater
     {
-        private readonly ILogger<Templater> _logger;
+        private readonly ILogger _logger;
 
-        public Templater(ILoggerFactory loggerFactory)
+        public Templater(ILogger<Templater> logger)
         {
-            _logger = loggerFactory.CreateLogger<Templater>();
+            _logger = logger;
         }
 
         public string CreateScroll(string text, Template template)
