@@ -2,23 +2,32 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
+using System.Linq;
+using Templater;
 
 namespace TheElvenScrolls
 {
     public class App
     {
-        private readonly ILogger<App> _logger;
+        private readonly ILogger _logger;
         private readonly AppSettings _settings;
+        private readonly IInputReader _inputReader;
+        private readonly ITemplateReader _templateReader;
         private readonly IJustifier _justifier;
+        private readonly ITemplater _templater;
+        private readonly IScrollWriter _scrollWriter;
 
-        private readonly JustifierSettings _configTest;
-
-        public App(ILogger<App> logger, IOptionsSnapshot<AppSettings> settings, IOptions<JustifierSettings> configTest, IJustifier justifier)
+        public App(ILogger<App> logger, IOptionsSnapshot<AppSettings> settings, IInputReader inputReader, ITemplateReader templateReader, IScrollWriter scrollWriter, IJustifier justifier, ITemplater templater)
         {
             _logger = logger;
+
             _settings = settings.Value;
+
+            _inputReader = inputReader;
+            _templateReader = templateReader;
             _justifier = justifier;
-            _configTest = configTest.Value;
+            _templater = templater;
+            _scrollWriter = scrollWriter;
         }
 
         public void Run()
@@ -26,47 +35,31 @@ namespace TheElvenScrolls
             Console.WriteLine("Copyright (C) 2017 Filip Cyrus Bober");
             Console.WriteLine("The Elven Scrolls ASCII letter generator");
 
-            var text = @"Test justify paragraph
-
-            Test justify paragraph
-
-            Test justify paragraph
-
-            LongLongLongLongLongLongLongLongLongLongLongLongLongLongLongLong Short Short
-
-            Short Short LongLongLongLongLongLongLongLongLongLongLongLongLong Short Short
-
-            Once         upon a midnight dreary, while I pondered, weak and weary,
-            Over many a quaint and curious volume of forgotten lore,
-            While I nodded, nearly napping, suddenly there came a tapping,
-            As of someone gently rapping, tapping at my chamber door.
-            'Tis some visitor, I muttered, tapping at my chamber door-
-            Only this, and nothing more.
-
-            Dwa slowa.
-
-            Ah, distinctly I remember it was in a bleak December,
-            And each separate dying ember wrought its ghost upon the floor.
-            Eagerly I wished the morrow; -vainly I had sought to borrow
-            From my books surcease of sorrow - sorrow for the lost Lenore -
-             For the rare and radiant maiden whom the angels name Lenore -
-             Nameless here for evermore.
-             ";
+            _logger.LogInformation("Reading text file");
+            if (_settings.InputPath == _settings.OutputPath)
+            {
+                _logger.LogWarning("Replacing intput file with output scroll");
+            }
+            var text = _inputReader.Read(_settings.InputPath);
 
             Console.WriteLine("Raw text:");
             Console.WriteLine(text);
 
-            _logger.LogDebug("Test");
+            Console.WriteLine("Reading template file");
+            var template = _templateReader.ReadTemplate(_settings.TemplatePath);
+            var lineWidth = template.Begin.Count(c => c == template.Fill);
 
-            var justified = _justifier.Justify(text, 30);
-
-            Console.WriteLine("----------------");
-
-            Console.WriteLine("Justified:");
+            var justified = _justifier.Justify(text, lineWidth);
+            _logger.LogInformation("Justification finished");
             Console.Write(justified);
 
-            _logger.LogInformation("Justification finished");
-            Console.ReadKey();
+            var scroll = _templater.CreateScroll(justified, template);
+
+            _logger.LogInformation("Scroll ready");
+            Console.Write(scroll);
+
+            _scrollWriter.WriteOutput(_settings.OutputPath, scroll);
         }
+
     }
 }

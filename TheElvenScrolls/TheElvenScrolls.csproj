@@ -3,6 +3,12 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp1.1</TargetFramework>
+    <RuntimeIdentifiers>win10-x64</RuntimeIdentifiers>
+    <Copyright>Filip Cyrus Bober</Copyright>
+    <PackageLicenseUrl>https://github.com/filipbober/TheElvenScrolls/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/filipbober/TheElvenScrolls</PackageProjectUrl>
+    <ApplicationIcon>scroll.ico</ApplicationIcon>
+    <Win32Resource />
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,6 +26,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Justifier\Justifier.csproj" />
+    <ProjectReference Include="..\Templater\Templater.csproj" />
   </ItemGroup>
 
   <ItemGroup>
