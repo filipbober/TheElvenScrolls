@@ -1,9 +1,11 @@
-﻿using Microsoft.Extensions.Logging;
-using System.IO;
+﻿using System.IO;
+using Microsoft.Extensions.Logging;
 using Templater;
 using Templater.Exceptions;
+using TheElvenScrolls.IO.Abstractions;
+using TheElvenScrolls.Settings;
 
-namespace TheElvenScrolls
+namespace TheElvenScrolls.IO
 {
     internal class TemplateReader : ITemplateReader
     {

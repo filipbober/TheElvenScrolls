@@ -1,7 +1,8 @@
-﻿using Microsoft.Extensions.Logging;
-using System.IO;
+﻿using System.IO;
+using Microsoft.Extensions.Logging;
+using TheElvenScrolls.IO.Abstractions;
 
-namespace TheElvenScrolls
+namespace TheElvenScrolls.IO
 {
     internal class InputReader : IInputReader
     {

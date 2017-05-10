@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace TheElvenScrolls
+﻿namespace TheElvenScrolls
 {
     public interface IScrollWriter
     {

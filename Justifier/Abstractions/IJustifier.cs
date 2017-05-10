@@ -1,4 +1,4 @@
-﻿namespace Justifier
+﻿namespace Justifier.Abstractions
 {
     public interface IJustifier
     {

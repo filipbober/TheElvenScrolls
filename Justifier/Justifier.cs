@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Justifier.Abstractions;
 using Justifier.Exceptions;
 
 namespace Justifier
@@ -18,6 +19,10 @@ namespace Justifier
 
         private double _justifyLongerThan;
 
+        private int _currentWidth;
+        private List<string> _lines;
+        private List<TextChunk> _newLine;
+
         public Justifier(ILoggerFactory loggerFactory, JustifierSettings settings)
         {
             _logger = loggerFactory.CreateLogger<Justifier>();
@@ -26,7 +31,7 @@ namespace Justifier
 
         public string Justify(string text, int width)
         {
-            _logger.LogInformation("Starting justification...");
+            _logger.LogInformation("Justifying");
 
             if (text.Length < 1)
             {
@@ -43,7 +48,7 @@ namespace Justifier
             SetJustifyWidthThreshold(width);
 
             text = RemoveMultipleSpaces(text);
-            var textChunks = CreateFragmentedText(text, width);
+            var textChunks = CreateFragmentedText(text);
             var lines = CreateJustifiedLines(width, textChunks);
 
             return lines.Aggregate((current, line) => current + (line));
@@ -67,7 +72,7 @@ namespace Justifier
 
             var tmp = Regex.Replace(text, @"[^\S\r\n]+", " ");
 
-            string result = string.Empty;
+            var result = string.Empty;
             var lines = tmp.Split(NewLine);
             foreach (var line in lines)
             {
@@ -78,7 +83,7 @@ namespace Justifier
             return result;
         }
 
-        private IList<TextChunk> CreateFragmentedText(string text, int width)
+        private IList<TextChunk> CreateFragmentedText(string text)
         {
             _logger.LogDebug("Creating fragmented text");
 
@@ -97,7 +102,6 @@ namespace Justifier
             if (_settings.IndentParagraphs)
                 result.Add(new TextChunk(_settings.Paragraph, ChunkType.Paragraph));
 
-            var firstWord = true;
             foreach (var paragraph in paragraphs)
             {
                 if (string.IsNullOrEmpty(paragraph))
@@ -107,46 +111,29 @@ namespace Justifier
                     if (_settings.IndentParagraphs)
                         result.Add(new TextChunk(_settings.Paragraph, ChunkType.Paragraph));
 
-                    firstWord = true;
                     continue;
                 }
 
                 foreach (var word in paragraph.Split(Space))
                 {
-                    if (word.Length > width)
-                    {
-                        var lineWidth = width;
-                        if (_settings.IndentParagraphs && firstWord)
-                            lineWidth -= _settings.Paragraph.Length;
+                    result.Add(new TextChunk(word, ChunkType.Word));
 
-                        var currentIdx = 0;
-                        var lettersLeft = word.Length;
-                        while (lettersLeft > 0)
-                        {
-                            string shorterWord;
-                            if (_settings.PauseAfterLongWords && lettersLeft > lineWidth)
-                                shorterWord = word.Substring(currentIdx, lineWidth - _settings.Pause.Length) + _settings.Pause;
-                            else
-                                shorterWord = word.Substring(currentIdx, Math.Min(lineWidth, lettersLeft));
-
-                            result.Add(new TextChunk(shorterWord, ChunkType.Word));
-                            lettersLeft -= shorterWord.Length;
-                            currentIdx += shorterWord.Length;
-
-                            lineWidth += _settings.Paragraph.Length;
-                        }
-                    }
-                    else
-                        result.Add(new TextChunk(word, ChunkType.Word));
-
-                    var endsWithPunctuation = char.IsPunctuation(word.Substring(word.Length - 1)[0]);
-                    result.Add(endsWithPunctuation ? new TextChunk(DoubleSpace, ChunkType.Space) : new TextChunk(Space, ChunkType.Space));
-
-                    firstWord = false;
+                    var useDoubleSpace = EndsWithPunctuation(word);
+                    result.Add(useDoubleSpace ? new TextChunk(DoubleSpace, ChunkType.Space) : new TextChunk(Space, ChunkType.Space));
                 }
             }
 
             return result;
+        }
+
+        private bool EndsWithPunctuation(string word)
+        {
+            var end = word.Substring(word.Length - 1)[0];
+
+            if (!char.IsPunctuation(end))
+                return false;
+
+            return !_settings.ExcludedPunctuations.Contains(end);
         }
 
         private IList<string> CreateJustifiedLines(int width, IList<TextChunk> chunks)
@@ -156,55 +143,105 @@ namespace Justifier
             if (chunks.Count < 1)
                 return new List<string>();
 
-            var lines = new List<string>();
+            _lines = new List<string>();
+            _newLine = new List<TextChunk>();
 
-            var newLine = new List<TextChunk>();
-
-            var currentWidth = 0;
+            _currentWidth = 0;
             for (int i = 0; i < chunks.Count - 1; i++)
             {
                 var chunk = chunks[i];
 
-                if (currentWidth == 0)
-                {
-                    if (chunk.Type == ChunkType.Space)
-                        continue;
-                }
+                ProcessChunk(width, chunk);
+            }
 
-                if (chunk.Type == ChunkType.NewLine)
-                {
-                    lines.Add(JustifyLastLine(newLine, currentWidth, width));
-                    lines.Add(AddBlankLine(width));
-                    currentWidth = 0;
-                    newLine = new List<TextChunk>();
-                    continue;
-                }
+            _lines.Add(JustifyLastLine(width));
 
-                if (currentWidth + chunk.Text.Length > width)
-                {
-                    // Skip spaces at the beginning of the line
-                    if (chunk.Type == ChunkType.Space)
-                        continue;
+            return _lines;
+        }
 
-                    lines.Add(JustifyLine(newLine, currentWidth, width));
-                    currentWidth = 0;
-                    newLine = new List<TextChunk>();
-                }
+        private void ProcessChunk(int width, TextChunk chunk)
+        {
+            if (_currentWidth == 0)
+            {
+                if (chunk.Type == ChunkType.Space)
+                    return;
+            }
 
-                if (currentWidth + chunk.Text.Length <= width)
+            if (chunk.Type == ChunkType.NewLine)
+            {
+                AddEndLine(width);
+                return;
+            }
+
+            var wordLength = chunk.Text.Length;
+            if (_currentWidth + wordLength > width)
+            {
+                // Skip spaces at the beginning of the line
+                if (chunk.Type == ChunkType.Space)
+                    return;
+
+                if (wordLength < width)
                 {
-                    newLine.Add(chunk);
-                    currentWidth += chunk.Text.Length;
+                    AddLine(width);
                 }
                 else
                 {
-                    _logger.LogError("Chunk cannot be processed: {0}", chunk.Text);
+                    ProcessLongWord(width, chunk);
                 }
             }
 
-            lines.Add(JustifyLastLine(newLine, currentWidth, width));
+            if (_currentWidth + chunk.Text.Length <= width)
+            {
+                _newLine.Add(chunk);
+                _currentWidth += chunk.Text.Length;
+            }
+            else
+            {
+                _logger.LogError("Chunk cannot be processed: {0}", chunk.Text);
+            }
+        }
 
-            return lines;
+        private void ProcessLongWord(int width, TextChunk chunk)
+        {
+            var currentIdx = 0;
+            var lettersLeft = chunk.Text.Length;
+            var word = chunk.Text;
+            while (lettersLeft > 0)
+            {
+                string shorterWord;
+                if (_settings.PauseAfterLongWords && lettersLeft > width)
+                    shorterWord = word.Substring(currentIdx, width - _settings.Pause.Length) + _settings.Pause;
+                else
+                    shorterWord = word.Substring(currentIdx, Math.Min(width, lettersLeft));
+
+                _newLine.Add(new TextChunk(shorterWord, chunk.Type));
+                AddLine(width);
+
+                lettersLeft -= shorterWord.Length;
+                currentIdx += shorterWord.Length;
+
+                if (_currentWidth + chunk.Text.Length <= width)
+                {
+                    _newLine.Add(new TextChunk(shorterWord, chunk.Type));
+                    _currentWidth += shorterWord.Length;
+                    break;
+                }
+            }
+        }
+
+        private void AddEndLine(int width)
+        {
+            _lines.Add(JustifyLastLine(width));
+            _lines.Add(AddBlankLine(width));
+            _currentWidth = 0;
+            _newLine = new List<TextChunk>();
+        }
+
+        private void AddLine(int width)
+        {
+            _lines.Add(JustifyLine(_newLine, _currentWidth, width));
+            _currentWidth = 0;
+            _newLine = new List<TextChunk>();
         }
 
         private string JustifyLine(IList<TextChunk> lineChunks, int lineWidth, int width)
@@ -257,14 +294,14 @@ namespace Justifier
             return result;
         }
 
-        private string JustifyLastLine(IList<TextChunk> lineChunks, int lineWidth, int width)
+        private string JustifyLastLine(int width)
         {
             var result = string.Empty;
 
-            if (!(lineWidth < _justifyLongerThan))
-                return JustifyLine(lineChunks, lineWidth, width);
+            if ((_currentWidth > _justifyLongerThan))
+                return JustifyLine(_newLine, _currentWidth, width);
 
-            foreach (var chunk in lineChunks)
+            foreach (var chunk in _newLine)
             {
                 result += chunk.Text;
             }

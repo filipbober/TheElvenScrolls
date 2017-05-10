@@ -1,10 +1,10 @@
-﻿using Microsoft.Extensions.Logging;
-using System.IO;
+﻿using System.IO;
 using System.Runtime.InteropServices;
+using Microsoft.Extensions.Logging;
 
-namespace TheElvenScrolls
+namespace TheElvenScrolls.IO
 {
-    class ScrollWriter : IScrollWriter
+    internal class ScrollWriter : IScrollWriter
     {
         private readonly ILogger _logger;
 

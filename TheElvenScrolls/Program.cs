@@ -7,14 +7,19 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using System.IO;
+using Justifier.Abstractions;
 using Justifier.Exceptions;
 using Microsoft.Extensions.Logging;
-using Templater;
+using Templater.Abstractions;
 using Templater.Exceptions;
+using TheElvenScrolls.Globals;
+using TheElvenScrolls.IO;
+using TheElvenScrolls.IO.Abstractions;
+using TheElvenScrolls.Settings;
 
 namespace TheElvenScrolls
 {
-    class Program
+    internal class Program
     {
         private static readonly ILogger Logger = ApplicationLogging.CreateLogger<Program>();
 
@@ -64,6 +69,7 @@ namespace TheElvenScrolls
             services.AddOptions();
 
             services.Configure<AppSettings>(configuration);
+            services.AddScoped(cfg => cfg.GetService<IOptionsSnapshot<AppSettings>>().Value);
 
             services.Configure<JustifierSettings>(configuration.GetSection("justifierSettings"));
             services.AddScoped(cfg => cfg.GetService<IOptionsSnapshot<JustifierSettings>>().Value);

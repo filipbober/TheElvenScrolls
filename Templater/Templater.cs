@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using Microsoft.Extensions.Logging;
+using Templater.Abstractions;
 using Templater.Exceptions;
 
 namespace Templater

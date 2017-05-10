@@ -1,8 +1,8 @@
 ﻿using Justifier;
 
-namespace TheElvenScrolls
+namespace TheElvenScrolls.Settings
 {
-    public class AppSettings
+    internal class AppSettings
     {
         public string TemplatePath { get; set; }
         public string InputPath { get; set; }

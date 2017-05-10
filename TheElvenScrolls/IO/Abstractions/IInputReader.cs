@@ -1,4 +1,4 @@
-﻿namespace TheElvenScrolls
+namespace TheElvenScrolls.IO.Abstractions
 {
     public interface IInputReader
     {

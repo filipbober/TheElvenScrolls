@@ -1,4 +1,6 @@
-﻿namespace Justifier
+﻿using System.Collections.Generic;
+
+namespace Justifier
 {
     public class JustifierSettings
     {
@@ -8,5 +10,6 @@
 
         public string Paragraph { get; set; } = "   ";
         public string Pause { get; set; } = "-";
+        public HashSet<char> ExcludedPunctuations { get; set; }
     }
 }

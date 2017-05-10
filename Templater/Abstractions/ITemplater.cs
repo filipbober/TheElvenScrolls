@@ -1,4 +1,4 @@
-﻿namespace Templater
+﻿namespace Templater.Abstractions
 {
     public interface ITemplater
     {

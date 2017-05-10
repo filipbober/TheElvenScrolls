@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 
-namespace TheElvenScrolls
+namespace TheElvenScrolls.Globals
 {
-    public static class ApplicationLogging
+    internal static class ApplicationLogging
     {
         public static ILoggerFactory LoggerFactory
         {
@@ -20,13 +20,11 @@ namespace TheElvenScrolls
 
         public static ILogger CreateLogger<T>() => LoggerFactory.CreateLogger<T>();
 
-        private static ILoggerFactory _loggerFactory = null;
+        private static ILoggerFactory _loggerFactory;
 
         public static void ConfigureLogger(ILoggerFactory loggerFactory)
         {
             loggerFactory.AddConsole();
         }
-
-
     }
 }

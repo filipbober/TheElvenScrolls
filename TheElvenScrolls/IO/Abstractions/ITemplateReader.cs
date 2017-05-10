@@ -1,6 +1,6 @@
 ﻿using Templater;
 
-namespace TheElvenScrolls
+namespace TheElvenScrolls.IO.Abstractions
 {
     public interface ITemplateReader
     {
