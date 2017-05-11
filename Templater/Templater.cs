@@ -25,8 +25,12 @@ namespace Templater
 
             if (beginCapacity != middleCapacity || middleCapacity != endCapacity)
             {
-                _logger.LogError("Template begin, middle and end fill space must be equal");
-                throw new TemplaterException("Template parts fill space is not equal");
+                if ((beginCapacity != 0 && middleCapacity != beginCapacity) ||
+                    (endCapacity != 0 && middleCapacity != endCapacity))
+                {
+                    _logger.LogError("Template begin, middle and end fill space must be equal (unless begin and/or end have no fillable space)");
+                    throw new TemplaterException("Template parts fill space is not equal");
+                }
             }
 
             if (middleCapacity < 1)

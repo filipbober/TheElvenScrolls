@@ -55,7 +55,7 @@ namespace TheElvenScrolls
             _logger.LogDebug("Reading template file");
             var template = _templateReader.ReadTemplate(_settings.TemplatePath);
 
-            var lineWidth = template.Begin.Count(c => c == template.Fill);
+            var lineWidth = template.Middle.Count(c => c == template.Fill);
             var justified = _justifier.Justify(text, lineWidth);
             _logger.LogInformation("Justification finished");
             _logger.LogDebug("\n" + justified);
