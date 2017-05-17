@@ -1,6 +1,6 @@
 ﻿namespace Justifier
 {
-    internal class TextChunk
+    internal sealed class TextChunk
     {
         public string Text { get; set; }
         public ChunkType Type { get; set; }

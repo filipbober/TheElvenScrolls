@@ -1,10 +1,11 @@
 ﻿using System.IO;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
+using TheElvenScrolls.IO.Abstractions;
 
 namespace TheElvenScrolls.IO
 {
-    internal class ScrollWriter : IScrollWriter
+    internal sealed class ScrollWriter : IScrollWriter
     {
         private readonly ILogger _logger;
 
@@ -13,7 +14,7 @@ namespace TheElvenScrolls.IO
             _logger = logger;
         }
 
-        public void WriteOutput(string path, string scroll)
+        public void Write(string path, string scroll)
         {
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows)

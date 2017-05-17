@@ -1,7 +1,7 @@
-﻿namespace TheElvenScrolls
+﻿namespace TheElvenScrolls.IO.Abstractions
 {
     public interface IScrollWriter
     {
-        void WriteOutput(string path, string scroll);
+        void Write(string path, string scroll);
     }
 }

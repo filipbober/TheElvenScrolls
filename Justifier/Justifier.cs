@@ -8,7 +8,7 @@ using Justifier.Exceptions;
 
 namespace Justifier
 {
-    public class Justifier : IJustifier
+    public sealed class Justifier : IJustifier
     {
         private const char NewLine = '\n';
         private const char Space = ' ';
@@ -23,9 +23,9 @@ namespace Justifier
         private List<string> _lines;
         private List<TextChunk> _newLine;
 
-        public Justifier(ILoggerFactory loggerFactory, JustifierSettings settings)
+        public Justifier(ILogger<Justifier> logger, JustifierSettings settings)
         {
-            _logger = loggerFactory.CreateLogger<Justifier>();
+            _logger = logger;
             _settings = settings;
         }
 
@@ -113,6 +113,10 @@ namespace Justifier
 
                     continue;
                 }
+
+                if (!_settings.BreakOnlyOnEmptyLines)
+                    result.Add(new TextChunk(NewLine, ChunkType.NewLine));
+
 
                 foreach (var word in paragraph.Split(Space))
                 {
@@ -232,7 +236,10 @@ namespace Justifier
         private void AddEndLine(int width)
         {
             _lines.Add(JustifyLastLine(width));
-            _lines.Add(AddBlankLine(width));
+
+            if (_settings.BreakOnlyOnEmptyLines)
+                _lines.Add(AddBlankLine(width));
+
             _currentWidth = 0;
             _newLine = new List<TextChunk>();
         }

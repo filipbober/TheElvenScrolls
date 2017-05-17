@@ -1,6 +1,6 @@
 ﻿namespace TheElvenScrolls.Settings
 {
-    internal class TemplateFileSettings
+    internal sealed class TemplateFileSettings
     {
         public string FillConfigPattern { get; set; } = "Fill=";
         public string BlankConfigPattern { get; set; } = "Blank=";

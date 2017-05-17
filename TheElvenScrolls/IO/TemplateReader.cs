@@ -7,20 +7,18 @@ using TheElvenScrolls.Settings;
 
 namespace TheElvenScrolls.IO
 {
-    internal class TemplateReader : ITemplateReader
+    internal sealed class TemplateReader : ITemplateReader
     {
         private readonly ILogger _logger;
-
-        TemplateFileSettings _settings;
+        private readonly TemplateFileSettings _settings;
 
         public TemplateReader(ILogger<TemplateReader> logger, TemplateFileSettings settings)
         {
             _logger = logger;
-
             _settings = settings;
         }
 
-        public Template ReadTemplate(string path)
+        public Template Read(string path)
         {
             if (!File.Exists(path))
             {

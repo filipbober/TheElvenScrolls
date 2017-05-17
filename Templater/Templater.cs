@@ -1,12 +1,11 @@
 ﻿using System;
-using System.Linq;
 using Microsoft.Extensions.Logging;
 using Templater.Abstractions;
 using Templater.Exceptions;
 
 namespace Templater
 {
-    public class Templater : ITemplater
+    public sealed class Templater : ITemplater
     {
         private readonly ILogger _logger;
 
@@ -15,13 +14,13 @@ namespace Templater
             _logger = logger;
         }
 
-        public string CreateScroll(string text, Template template)
+        public string Create(string text, Template template)
         {
             var result = string.Empty;
 
-            var beginCapacity = ComputeCapacity(template.Fill, template.Begin);
-            var middleCapacity = ComputeCapacity(template.Fill, template.Middle);
-            var endCapacity = ComputeCapacity(template.Fill, template.End);
+            var beginCapacity = template.ComputeCapacity(template.Begin);
+            var middleCapacity = template.ComputeCapacity(template.Middle);
+            var endCapacity = template.ComputeCapacity(template.End);
 
             if (beginCapacity != middleCapacity || middleCapacity != endCapacity)
             {
@@ -52,9 +51,10 @@ namespace Templater
                 charsLeft -= endCapacity;
             }
 
-            text = text.Substring(0, charsLeft);
+
             while (charsLeft > 0)
             {
+                text = text.Substring(0, charsLeft);
                 result += CreatePart(template.Fill, template.Blank, text, template.Middle);
                 text = text.Substring(Math.Min(middleCapacity, charsLeft));
 
@@ -65,12 +65,7 @@ namespace Templater
             return result;
         }
 
-        private int ComputeCapacity(char fill, string part)
-        {
-            return part.Count(c => c == fill);
-        }
-
-        private string CreatePart(char fill, char blank, string text, string templatePart)
+        private static string CreatePart(char fill, char blank, string text, string templatePart)
         {
             var result = string.Empty;
             var current = 0;

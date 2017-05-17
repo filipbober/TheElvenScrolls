@@ -4,7 +4,7 @@ using TheElvenScrolls.IO.Abstractions;
 
 namespace TheElvenScrolls.IO
 {
-    internal class InputReader : IInputReader
+    internal sealed class InputReader : IInputReader
     {
         private readonly ILogger _logger;
 
