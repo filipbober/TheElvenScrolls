@@ -1,4 +1,5 @@
-﻿using Justifier.Abstractions;
+﻿using System.Collections.Generic;
+using Justifier.Abstractions;
 using Microsoft.Extensions.Logging;
 using Templater;
 using Templater.Abstractions;
@@ -19,7 +20,7 @@ namespace TheElvenScrolls.Wrappers
             _templater = templater;
         }
 
-        public string Justify(string text, int width)
+        public IList<string> Justify(string text, int width)
         {
             return _justifier.Justify(text, width);
         }
@@ -34,7 +35,7 @@ namespace TheElvenScrolls.Wrappers
             return _justifier.PredictLength(text);
         }
 
-        public string CreateTemplate(string text, Template template)
+        public string CreateTemplate(IList<string> text, Template template)
         {
             return _templater.Create(text, template);
         }

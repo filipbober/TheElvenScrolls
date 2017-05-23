@@ -29,14 +29,14 @@ namespace Justifier
             _settings = settings;
         }
 
-        public string Justify(string text, int width)
+        public IList<string> Justify(string text, int width)
         {
             _logger.LogInformation("Justifying");
 
             if (text.Length < 1)
             {
                 _logger.LogWarning("Text is empty");
-                return string.Empty;
+                return new List<string>();
             }
 
             if (_settings.Paragraph.Length >= width / 2)
@@ -51,15 +51,16 @@ namespace Justifier
             var textChunks = CreateFragmentedText(text);
             var lines = CreateJustifiedLines(width, textChunks);
 
-            return lines.Aggregate((current, line) => current + (line));
+            return lines;
         }
 
-        private IList<TextChunk> _chunks = null;
-        private int _currentChunk = 0;
-        private bool _nextNewLine = false;
-        private string _lastLeft = null;
+        private IList<TextChunk> _chunks;
+        private int _currentChunk;
+        private bool _nextNewLine;
+
         public string JustifySingleLine(ref string left, int width)
         {
+            _settings.EndingThresholdPercent = 0;
             if (_nextNewLine)
             {
                 _nextNewLine = false;
@@ -102,28 +103,28 @@ namespace Justifier
 
             foreach (var chunk in _newLine)
             {
-                if (chunk.Type == ChunkType.NewLine)
-                    left += NewLine;
-                else
-                    left += chunk.Text;
+                left += chunk.Text;
             }
 
             for (int i = currentChunk; i < chunks.Count; i++)
             {
-                if (chunks[i].Type == ChunkType.NewLine)
-                    left += NewLine;
-                else
+                //if (chunks[i].Type == ChunkType.NewLine)
+                //    left += NewLine;
+                //else
                     left += chunks[i].Text;
             }
 
             _currentChunk = currentChunk;
-            _lastLeft = left;
+            //left = RemoveMultipleSpaces(left);
             if (_lines.Count < 1)
             {
                 var lastLine = left;
                 left = string.Empty;
 
-                return lastLine;
+                AddEndLine(width);
+                return _lines[0];
+
+                //return lastLine;
             }
 
             if (_lines.Count > 1 && string.IsNullOrWhiteSpace(_lines[1]))
@@ -255,7 +256,7 @@ namespace Justifier
         {
             if (_currentWidth == 0)
             {
-                if (chunk.Type == ChunkType.Space)
+                if (chunk.Type == ChunkType.Space || chunk.Type == ChunkType.NewLine)
                     return;
             }
 

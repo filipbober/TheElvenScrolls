@@ -16,6 +16,35 @@ namespace Templater
             return part.Count(c => c == Fill);
         }
 
+        public bool CheckConstantWidth()
+        {
+            var fullTemplate = Begin + Middle + End;
+
+            var width = -1;
+            var currentWidth = 0;
+            foreach (var c in fullTemplate)
+            {
+                if (c == Fill)
+                {
+                    currentWidth++;
+                }
+                else if (c == '\n')
+                {
+                    if (currentWidth != 0)
+                    {
+                        if (width < 0)
+                            width = currentWidth;
+                        else if (currentWidth != width)
+                            return false;
+                    }
+
+                    currentWidth = 0;
+                }
+            }
+
+            return true;
+        }
+
         public int ComputePartMaxWidth(string part)
         {
             var width = 0;

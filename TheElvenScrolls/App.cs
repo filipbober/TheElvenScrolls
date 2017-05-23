@@ -1,5 +1,4 @@
-﻿using System;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -108,136 +107,19 @@ namespace TheElvenScrolls
                 _template = _scribe.ReadTemplate(_settings.DefaultFilesSettings.Template);
             }
 
-            // Justification
-            //var lineWidth = _template.ComputePartMaxWidth(_template.Middle);
-            //var justified = _toolbox.Justify(_input, lineWidth);
-
-            //if (beginCapacity != middleCapacity || middleCapacity != endCapacity)
-
-            //var lineWidth = _template.ComputePartMaxWidth(_template.Middle);
-            //var justified = _toolbox.Justify(_input, lineWidth);
-
-
-            //var scroll = string.Empty;
-
-            var justified = string.Empty;
-            var beginCapacity = _template.ComputeCapacity(_template.Begin);
-            var middleCapacity = _template.ComputeCapacity(_template.Middle);
-            var endCapacity = _template.ComputeCapacity(_template.End);
-            if (beginCapacity != middleCapacity || middleCapacity != endCapacity)
+            IList<string> justifiedLines;
+            if (!_template.CheckConstantWidth())
             {
-                // Justify line by line
-                var left = _input;
-                var justifiedLines = new List<string>();
-                var beginReady = false;
-                var endReady = false;
-                var endlines = new List<string>();
-                while (left.Length > 0 && !string.IsNullOrWhiteSpace(left))
-                {
-                    // Begin
-                    if (_input.Length - left.Length < beginCapacity && !beginReady)
-                    {
-                        var lines = new List<string>();
-                        var newLine = string.Empty;
-                        foreach (var c in _template.Begin)
-                        {
-                            if (c == '\r')
-                                continue;
-
-                            if (c == '\n')
-                            {
-                                lines.Add(newLine);
-                                newLine = string.Empty;
-                            }
-                            else
-                            {
-                                newLine += c;
-                            }
-                        }
-
-                        foreach (var line in lines)
-                        {
-                            var width = _template.ComputeLineWidth(line);
-                            if (width < 1)
-                                continue;
-
-                            justifiedLines.Add(_toolbox.JustifySingleLine(ref left, width));
-                        }
-                        beginReady = true;
-                    }
-                    // End
-                    //else if (beginReady && !endReady)//if (left.Length <= endCapacity)
-                    //{
-                    //    // TODO: While !(left <= 0)
-                    //    var lines = new List<string>();
-                    //    var newLine = string.Empty;
-                    //    foreach (var c in _template.End)
-                    //    {
-                    //        if (c == '\r')
-                    //            continue;
-
-                    //        if (c == '\n')
-                    //        {
-                    //            lines.Add(newLine);
-                    //            newLine = string.Empty;
-                    //        }
-                    //        else
-                    //        {
-                    //            newLine += c;
-                    //        }
-                    //    }
-
-                    //    var currentIdx = 0;
-                    //    var end = left.Substring(currentIdx);
-                    //    while (currentIdx < left.Length && _toolbox.PredictLength(end) > endCapacity)
-                    //    {
-                    //        currentIdx++;
-                    //        end = left.Substring(currentIdx);
-                    //    }
-
-                    //    var length = _toolbox.PredictLength(left);
-                    //    foreach (var line in lines)
-                    //    {
-                    //        var width = _template.ComputeLineWidth(line);
-                    //        if (width < 1)
-                    //            continue;
-
-                    //        endlines.Add(_toolbox.JustifySingleLine(ref end, width));
-
-                    //    }
-
-                    //    left = left.Substring(0, currentIdx - 1);
-                    //    endReady = true;
-                    //}
-                    // Middle
-                    else
-                    {
-                        justifiedLines.Add(_toolbox.JustifySingleLine(ref left, _template.ComputePartMaxWidth(_template.Middle)));
-                    }
-                }
-
-                justified = justifiedLines.Aggregate(justified, (current, line) => current + line);
-
-                foreach (var line in justifiedLines)
-                    Console.WriteLine(line);
+                justifiedLines = CreateVariableWidthJustifiedLines();
             }
             else
             {
                 var lineWidth = _template.ComputePartMaxWidth(_template.Middle);
-                justified = _toolbox.Justify(_input, lineWidth);
-
+                justifiedLines = _toolbox.Justify(_input, lineWidth).ToList();
             }
 
-            var scroll = _toolbox.CreateTemplate(justified, _template);
+            var scroll = _toolbox.CreateTemplate(justifiedLines, _template);
             _logger.LogInformation("Scroll ready:\n" + scroll);
-            // ---
-
-
-            _logger.LogInformation("Justification finished");
-            _logger.LogDebug("\n" + justified);
-
-            //var scroll = _toolbox.CreateTemplate(justified, _template);
-            //_logger.LogInformation("Scroll ready:\n" + scroll);
 
             if (_outputPath == null)
             {
@@ -247,6 +129,69 @@ namespace TheElvenScrolls
             _logger.LogInformation("Scroll saved under path: " + Directory.GetCurrentDirectory() + _outputPath);
 
             _menu.Wait();
+        }
+
+        private IList<string> CreateVariableWidthJustifiedLines()
+        {
+            var justifiedLines = new List<string>();
+
+            var beginCapacity = _template.ComputeCapacity(_template.Begin);
+            var endCapacity = _template.ComputeCapacity(_template.End);
+
+            var left = _input;
+
+            var beginReady = false;
+            while (left.Length > 0 && !string.IsNullOrWhiteSpace(left))
+            {
+                if (_input.Length - left.Length < beginCapacity && !beginReady)
+                {
+                    // Begin
+                    AddLines(_template.Begin, justifiedLines, ref left);
+                    beginReady = true;
+                }
+                else if (_toolbox.PredictLength(left) <= endCapacity)
+                {
+                    // End
+                    AddLines(_template.End, justifiedLines, ref left);
+                }
+                else
+                {
+                    // Middle
+                    justifiedLines.Add(_toolbox.JustifySingleLine(ref left, _template.ComputePartMaxWidth(_template.Middle)));
+                }
+            }
+
+            return justifiedLines;
+        }
+
+        private void AddLines(string templatePart, List<string> justifiedLines, ref string left)
+        {
+            var lines = new List<string>();
+            var newLine = string.Empty;
+            foreach (var c in templatePart)
+            {
+                switch (c)
+                {
+                    case '\r':
+                        continue;
+                    case '\n':
+                        lines.Add(newLine);
+                        newLine = string.Empty;
+                        break;
+                    default:
+                        newLine += c;
+                        break;
+                }
+            }
+
+            foreach (var line in lines)
+            {
+                var width = _template.ComputeLineWidth(line);
+                if (width < 1)
+                    continue;
+
+                justifiedLines.Add(_toolbox.JustifySingleLine(ref left, width));
+            }
         }
 
         private void ChangeTemplate(object sender, PathChangedArgs e)
