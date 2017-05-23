@@ -1,0 +1,14 @@
+Fill=+
+Blank= 
+<NEXT>
+ ______________________________________________________________
+| ++++++++++++++++++++++++++++++++++++++++++++  AAAAAAAAAAAAAA |
+| +++++++++++++++++++++++++++++++++++++++++++++  BBBBBBBBBBBBB |
+| ++++++++++++++++++++++++++++++++++++++++++++++  CCCCCCCCCCCC |
+<NEXT>
+| ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ |
+<NEXT>
+| +++++++++++  AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA |
+| ++++++++++  BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB |
+| +++++++++  CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC |
+ ---------------------------------------------------------------

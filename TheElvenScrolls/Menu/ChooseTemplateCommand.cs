@@ -12,7 +12,7 @@ namespace TheElvenScrolls.Menu
     {
         public string Description => "Choose template";
 
-        internal event EventHandler<PathChangedArgs> TemplateChanged = delegate { };
+        public event EventHandler<PathChangedArgs> TemplateChanged = delegate { };
 
         private readonly ILogger _logger;
         private readonly IMenu _menu;

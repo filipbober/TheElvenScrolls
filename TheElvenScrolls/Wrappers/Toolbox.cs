@@ -24,6 +24,16 @@ namespace TheElvenScrolls.Wrappers
             return _justifier.Justify(text, width);
         }
 
+        public string JustifySingleLine(ref string left, int width)
+        {
+            return _justifier.JustifySingleLine(ref left, width);
+        }
+
+        public int PredictLength(string text)
+        {
+            return _justifier.PredictLength(text);
+        }
+
         public string CreateTemplate(string text, Template template)
         {
             return _templater.Create(text, template);

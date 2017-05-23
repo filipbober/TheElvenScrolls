@@ -22,15 +22,15 @@ namespace Templater
             var middleCapacity = template.ComputeCapacity(template.Middle);
             var endCapacity = template.ComputeCapacity(template.End);
 
-            if (beginCapacity != middleCapacity || middleCapacity != endCapacity)
-            {
-                if ((beginCapacity != 0 && middleCapacity != beginCapacity) ||
-                    (endCapacity != 0 && middleCapacity != endCapacity))
-                {
-                    _logger.LogError("Template begin, middle and end fill space must be equal (unless begin and/or end have no fillable space)");
-                    throw new TemplaterException("Template parts fill space is not equal");
-                }
-            }
+            //if (beginCapacity != middleCapacity || middleCapacity != endCapacity)
+            //{
+            //    if ((beginCapacity != 0 && middleCapacity != beginCapacity) ||
+            //        (endCapacity != 0 && middleCapacity != endCapacity))
+            //    {
+            //        _logger.LogError("Template begin, middle and end fill space must be equal (unless begin and/or end have no fillable space)");
+            //        throw new TemplaterException("Template parts fill space is not equal");
+            //    }
+            //}
 
             if (middleCapacity < 1)
             {
@@ -44,13 +44,8 @@ namespace Templater
             text = text.Substring(beginCapacity);
 
             var endText = text.Substring(text.Length - Math.Min(endCapacity, text.Length), Math.Min(endCapacity, text.Length));
-            var endResult = string.Empty;
-            if (charsLeft > 0)
-            {
-                endResult += CreatePart(template.Fill, template.Blank, endText, template.End);
-                charsLeft -= endCapacity;
-            }
-
+            var endResult = CreatePart(template.Fill, template.Blank, endText, template.End);
+            charsLeft -= endCapacity;
 
             while (charsLeft > 0)
             {

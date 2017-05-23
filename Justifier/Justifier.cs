@@ -54,6 +54,92 @@ namespace Justifier
             return lines.Aggregate((current, line) => current + (line));
         }
 
+        private IList<TextChunk> _chunks = null;
+        private int _currentChunk = 0;
+        private bool _nextNewLine = false;
+        private string _lastLeft = null;
+        public string JustifySingleLine(ref string left, int width)
+        {
+            if (_nextNewLine)
+            {
+                _nextNewLine = false;
+                return AddBlankLine(width);
+            }
+
+            if (_chunks == null /*|| (_lastLeft == null || _lastLeft != left)*/)
+            {
+                left = RemoveMultipleSpaces(left);
+                _chunks = CreateFragmentedText(left);
+                _currentChunk = 0;
+            }
+            var chunks = _chunks;
+
+            left = string.Empty;
+            if (chunks.Count < 1)
+            {
+                //_lastLeft = null;
+                //_chunks = null;
+                return string.Empty;
+            }
+
+            _lines = new List<string>();
+            _newLine = new List<TextChunk>();
+
+            _currentWidth = 0;
+            var currentChunk = _currentChunk;
+            for (int i = _currentChunk; i < chunks.Count - 1; i++)
+            {
+                var chunk = chunks[i];
+                ProcessChunk(width, chunk);
+
+                if (_lines.Count < 1)
+                    currentChunk++;
+                else
+                    break;
+
+
+            }
+
+            foreach (var chunk in _newLine)
+            {
+                if (chunk.Type == ChunkType.NewLine)
+                    left += NewLine;
+                else
+                    left += chunk.Text;
+            }
+
+            for (int i = currentChunk; i < chunks.Count; i++)
+            {
+                if (chunks[i].Type == ChunkType.NewLine)
+                    left += NewLine;
+                else
+                    left += chunks[i].Text;
+            }
+
+            _currentChunk = currentChunk;
+            _lastLeft = left;
+            if (_lines.Count < 1)
+            {
+                var lastLine = left;
+                left = string.Empty;
+
+                return lastLine;
+            }
+
+            if (_lines.Count > 1 && string.IsNullOrWhiteSpace(_lines[1]))
+                _nextNewLine = true;
+
+            return _lines[0];
+        }
+
+        public int PredictLength(string text)
+        {
+            var normalized = RemoveMultipleSpaces(text);
+            var chunks = CreateFragmentedText(normalized);
+
+            return chunks.Where(chunk => chunk.Type != ChunkType.NewLine).Sum(chunk => chunk.Text.Length);
+        }
+
         private void SetJustifyWidthThreshold(int width)
         {
             var isInvalid = _settings.EndingThresholdPercent > 1.0 || _settings.EndingThresholdPercent < 0.0;
@@ -149,11 +235,13 @@ namespace Justifier
 
             _lines = new List<string>();
             _newLine = new List<TextChunk>();
+            //_newLine = new LinkedList<TextChunk>();
 
             _currentWidth = 0;
             for (int i = 0; i < chunks.Count - 1; i++)
             {
                 var chunk = chunks[i];
+
 
                 ProcessChunk(width, chunk);
             }
@@ -180,7 +268,6 @@ namespace Justifier
             var wordLength = chunk.Text.Length;
             if (_currentWidth + wordLength > width)
             {
-                // Skip spaces at the beginning of the line
                 if (chunk.Type == ChunkType.Space)
                     return;
 
@@ -190,7 +277,9 @@ namespace Justifier
                 }
                 else
                 {
+                    AddLine(width);
                     ProcessLongWord(width, chunk);
+                    return;
                 }
             }
 
@@ -224,12 +313,12 @@ namespace Justifier
                 lettersLeft -= shorterWord.Length;
                 currentIdx += shorterWord.Length;
 
-                if (_currentWidth + chunk.Text.Length <= width)
-                {
-                    _newLine.Add(new TextChunk(shorterWord, chunk.Type));
-                    _currentWidth += shorterWord.Length;
-                    break;
-                }
+                if (_currentWidth + chunk.Text.Length > width)
+                    continue;
+
+                _newLine.Add(new TextChunk(shorterWord, chunk.Type));
+                _currentWidth += shorterWord.Length;
+                break;
             }
         }
 
@@ -274,7 +363,6 @@ namespace Justifier
             }
 
             var spaceChunks = lineChunks.Where(chunk => chunk.Type == ChunkType.Space).ToList();
-
             if (spaceChunks.Count > 0)
             {
                 var rnd = new Random();
@@ -294,10 +382,12 @@ namespace Justifier
             {
                 foreach (var chunk in lineChunks)
                     result += chunk.Text;
-
-                _logger.LogDebug("Long line: {0}", result);
             }
 
+            while (result.Length < width)
+                result += Space;
+
+            _logger.LogDebug("Long line: {0}", result);
             return result;
         }
 
@@ -305,13 +395,11 @@ namespace Justifier
         {
             var result = string.Empty;
 
-            if ((_currentWidth > _justifyLongerThan))
+            if (_currentWidth > _justifyLongerThan)
                 return JustifyLine(_newLine, _currentWidth, width);
 
             foreach (var chunk in _newLine)
-            {
                 result += chunk.Text;
-            }
 
             while (result.Length < width)
                 result += Space;

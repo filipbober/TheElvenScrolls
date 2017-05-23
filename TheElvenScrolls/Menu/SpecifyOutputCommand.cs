@@ -12,7 +12,7 @@ namespace TheElvenScrolls.Menu
     {
         public string Description => "Specify output file";
 
-        internal event EventHandler<PathChangedArgs> OutputChanged = delegate { };
+        public event EventHandler<PathChangedArgs> OutputChanged = delegate { };
 
         private readonly ILogger _logger;
         private readonly IMenu _menu;
