@@ -133,6 +133,9 @@ namespace TheElvenScrolls
 
         private IList<string> CreateVariableWidthJustifiedLines()
         {
+            if (!_settings.JustifierSettings.BreakOnlyOnEmptyLines)
+                _logger.LogWarning("Justifier BreakOnlyOnEmptyLines should be true for best results");
+
             var justifiedLines = new List<string>();
 
             var beginCapacity = _template.ComputeCapacity(_template.Begin);
@@ -157,7 +160,7 @@ namespace TheElvenScrolls
                 else
                 {
                     // Middle
-                    justifiedLines.Add(_toolbox.JustifySingleLine(ref left, _template.ComputePartMaxWidth(_template.Middle)));
+                    justifiedLines.Add(_toolbox.JustifyNextLine(ref left, _template.ComputePartMaxWidth(_template.Middle)));
                 }
             }
 
@@ -190,7 +193,7 @@ namespace TheElvenScrolls
                 if (width < 1)
                     continue;
 
-                justifiedLines.Add(_toolbox.JustifySingleLine(ref left, width));
+                justifiedLines.Add(_toolbox.JustifyNextLine(ref left, width));
             }
         }
 

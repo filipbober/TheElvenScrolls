@@ -12,6 +12,8 @@ Templates are expected to have exactly three parts: Begin, Middle and End. Each 
 
 Currently only templates with a __constant__ (or empty - in case of Begin and End parts) fillable space width across all parts are supported.
 
+There is support for templates with variable width from version 2.0. Width may vary only within Begin and End template parts. Middle part must be __constant__. Empty lines and especially setting _breakOnlyOnEmptyLines_ to false may cause template end to be incorrectly formatted.
+
 ## Template format
 
 First two lines define fill and blank character. The former defines space in the template to be replaced by text and the latter is a character that will be used to replace fill characters in the output file. Template parts come after config. Each template part is separated by a chosen separator.
@@ -74,7 +76,7 @@ Items in Menu are searched in directories defined inside this section.
 * __endingThresholdPercent__: Defines percent of last line of a paragraph filled with text, above which the line will be justified.
 * __pauseAfterLongWords__: Whether _pause_ should be inserted at long word (longer than a single line width) break point.
 * __indentParagraphs__: Whether paragraphs should be indented.
-* __breakOnlyOnEmptyLines__: Whether every line break will be new line in the output or only empty new lines.
+* __breakOnlyOnEmptyLines__: Whether every line break will be new line in the output or only empty new lines. Setting option to false may cause invalid results for variable width templates.
 * __paragraph__: String to indent paragraphs with, if _indentParagraphs_ is true.
 * __pause__: String to write at the end of the line for long words, if _pauseAfterLongWords_ is true.
 * __excludedPunctuations__: Characters that are punctuations but should not be followed by double space in justification process.
