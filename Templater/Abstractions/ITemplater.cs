@@ -1,7 +1,9 @@
-﻿namespace Templater.Abstractions
+﻿using System.Collections.Generic;
+
+namespace Templater.Abstractions
 {
     public interface ITemplater
     {
-        string CreateScroll(string text, Template template);
+        string Create(IList<string> text, Template template);
     }
 }

@@ -1,7 +1,9 @@
-﻿namespace Justifier.Abstractions
+﻿using System.Collections.Generic;
+
+namespace Justifier.Abstractions
 {
     public interface IJustifier
     {
-        string Justify(string text, int width);
+        IList<string> Justify(string text, int width);
     }
 }

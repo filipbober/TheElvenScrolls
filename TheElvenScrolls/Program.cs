@@ -15,7 +15,11 @@ using Templater.Exceptions;
 using TheElvenScrolls.Globals;
 using TheElvenScrolls.IO;
 using TheElvenScrolls.IO.Abstractions;
+using TheElvenScrolls.Menu;
+using TheElvenScrolls.Menu.Abstractions;
 using TheElvenScrolls.Settings;
+using TheElvenScrolls.Wrappers;
+using TheElvenScrolls.Wrappers.Abstractions;
 
 namespace TheElvenScrolls
 {
@@ -59,14 +63,16 @@ namespace TheElvenScrolls
 
         private static void ConfigureServices(IServiceCollection services)
         {
-            services.AddSingleton(ApplicationLogging.LoggerFactory);
-            services.AddLogging();
-
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: false)
+                .AddJsonFile("appsettings.user.json", optional: true)
                 .Build();
             services.AddOptions();
+
+            services.AddSingleton(ApplicationLogging.LoggerFactory
+                .AddConsole(configuration.GetSection("logging")));
+            services.AddLogging();
 
             services.Configure<AppSettings>(configuration);
             services.AddScoped(cfg => cfg.GetService<IOptionsSnapshot<AppSettings>>().Value);
@@ -77,11 +83,18 @@ namespace TheElvenScrolls
             services.Configure<TemplateFileSettings>(configuration.GetSection("templateFileSettings"));
             services.AddScoped(cfg => cfg.GetService<IOptionsSnapshot<TemplateFileSettings>>().Value);
 
-            services.AddTransient<IJustifier, Justifier.Justifier>();
+            services.AddSingleton<IMenu, ConsoleMenu>();
+
+            services.AddSingleton<IJustifier, Justifier.Justifier>();
+            services.AddSingleton<IVariableWidthJustifier, Justifier.Justifier>();
+
             services.AddTransient<ITemplater, Templater.Templater>();
             services.AddTransient<IInputReader, InputReader>();
             services.AddTransient<ITemplateReader, TemplateReader>();
             services.AddTransient<IScrollWriter, ScrollWriter>();
+
+            services.AddTransient<IScribe, Scribe>();
+            services.AddTransient<IToolbox, Toolbox>();
 
             services.AddTransient<App>();
         }

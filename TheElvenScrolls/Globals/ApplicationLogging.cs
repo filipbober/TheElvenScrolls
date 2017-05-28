@@ -18,13 +18,13 @@ namespace TheElvenScrolls.Globals
             }
         }
 
-        public static ILogger CreateLogger<T>() => LoggerFactory.CreateLogger<T>();
+        public static ILogger<T> CreateLogger<T>() => LoggerFactory.CreateLogger<T>();
 
         private static ILoggerFactory _loggerFactory;
 
         public static void ConfigureLogger(ILoggerFactory loggerFactory)
         {
-            loggerFactory.AddConsole();
+            loggerFactory.AddDebug();
         }
     }
 }

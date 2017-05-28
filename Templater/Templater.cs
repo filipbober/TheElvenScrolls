@@ -1,81 +1,116 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Templater.Abstractions;
 using Templater.Exceptions;
 
 namespace Templater
 {
-    public class Templater : ITemplater
+    public sealed class Templater : ITemplater
     {
         private readonly ILogger _logger;
+
+        private int _currentLineIdx;
 
         public Templater(ILogger<Templater> logger)
         {
             _logger = logger;
         }
 
-        public string CreateScroll(string text, Template template)
+        public string Create(IList<string> textLines, Template template)
         {
             var result = string.Empty;
 
-            var beginCapacity = ComputeCapacity(template.Fill, template.Begin);
-            var middleCapacity = ComputeCapacity(template.Fill, template.Middle);
-            var endCapacity = ComputeCapacity(template.Fill, template.End);
+            if (textLines == null)
+                return result;
 
-            if (beginCapacity != middleCapacity || middleCapacity != endCapacity)
-            {
-                if ((beginCapacity != 0 && middleCapacity != beginCapacity) ||
-                    (endCapacity != 0 && middleCapacity != endCapacity))
-                {
-                    _logger.LogError("Template begin, middle and end fill space must be equal (unless begin and/or end have no fillable space)");
-                    throw new TemplaterException("Template parts fill space is not equal");
-                }
-            }
+            var beginLines = Regex.Split(template.Begin, "\r\n|\r|\n").ToList();
+            beginLines.RemoveAt(beginLines.Count - 1);
 
-            if (middleCapacity < 1)
-            {
-                _logger.LogError("Template middle part must have filling space");
-                throw new TemplaterException("Fill space not found in template middle part");
-            }
+            var middleLines = Regex.Split(template.Middle, "\r\n|\r|\n").ToList();
+            middleLines.RemoveAt(middleLines.Count - 1);
 
-            var charsLeft = text.Length;
-            result += CreatePart(template.Fill, template.Blank, text, template.Begin);
-            charsLeft -= beginCapacity;
-            text = text.Substring(beginCapacity);
+            var endLines = Regex.Split(template.End, "\r\n|\r|\n").ToList();
+            endLines.RemoveAt(endLines.Count - 1);
 
-            var endText = text.Substring(text.Length - Math.Min(endCapacity, text.Length), Math.Min(endCapacity, text.Length));
+            _currentLineIdx = 0;
+            var currentTemplateIdx = 0;
+
+            var beginReady = false;
+            var endReady = false;
+
             var endResult = string.Empty;
-            if (charsLeft > 0)
+            while (_currentLineIdx < textLines.Count)
             {
-                endResult += CreatePart(template.Fill, template.Blank, endText, template.End);
-                charsLeft -= endCapacity;
-            }
+                string textLine;
 
-            text = text.Substring(0, charsLeft);
-            while (charsLeft > 0)
-            {
-                result += CreatePart(template.Fill, template.Blank, text, template.Middle);
-                text = text.Substring(Math.Min(middleCapacity, charsLeft));
+                if (!beginReady && currentTemplateIdx < beginLines.Count)
+                {
+                    foreach (var templateLine in beginLines)
+                    {
+                        textLine = _currentLineIdx >= textLines.Count ? string.Empty : textLines[_currentLineIdx];
+                        result += CreateLine(template.Fill, template.Blank, textLine, templateLine);
+                    }
 
-                charsLeft -= middleCapacity;
+                    currentTemplateIdx += beginLines.Count;
+                    beginReady = true;
+                }
+
+                if (!endReady && textLines.Count - _currentLineIdx <= CountFillableLines(endLines, template.Fill))
+                {
+                    foreach (var templateLine in endLines)
+                    {
+                        textLine = _currentLineIdx >= textLines.Count ? string.Empty : textLines[_currentLineIdx];
+                        endResult += CreateLine(template.Fill, template.Blank, textLine, templateLine);
+                    }
+
+                    currentTemplateIdx += endLines.Count;
+                    endReady = true;
+                }
+                else
+                {
+                    textLine = textLines[_currentLineIdx];
+                    var middleLineIdx = currentTemplateIdx % middleLines.Count;
+                    var templateLine = middleLines[middleLineIdx];
+                    result += CreateLine(template.Fill, template.Blank, textLine, templateLine);
+                    currentTemplateIdx++;
+                }
             }
 
             result += endResult;
             return result;
         }
 
-        private int ComputeCapacity(char fill, string part)
+        private string CreateLine(char fill, char blank, string textLine, string templateLine)
         {
-            return part.Count(c => c == fill);
+            if (!string.IsNullOrEmpty(textLine) &&
+                templateLine.Contains(fill) &&
+                templateLine.Count(c => c == fill) != textLine.Length)
+                _logger.LogWarning("Line does not fit template, possible formatting errors: {0}", textLine);
+
+            var result = CreatePart(fill, blank, textLine, templateLine + "\n");
+
+            if (!string.IsNullOrEmpty(textLine) && templateLine.Contains(fill))
+                _currentLineIdx++;
+
+            return result;
         }
 
-        private string CreatePart(char fill, char blank, string text, string templatePart)
+        private static int CountFillableLines(IList<string> templateLines, char fill)
         {
+            return templateLines.Count(line => line.Count(c => c == fill) > 0);
+        }
+
+        private static string CreatePart(char fill, char blank, string text, string templateLine)
+        {
+            if (text == null)
+                throw new TemplaterException("Text line is null");
+
             var result = string.Empty;
             var current = 0;
 
-            foreach (var c in templatePart)
+            foreach (var c in templateLine)
             {
                 if (c != fill)
                 {
@@ -92,6 +127,5 @@ namespace Templater
 
             return result;
         }
-
     }
 }
