@@ -1,5 +1,4 @@
-﻿using System;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -99,7 +98,7 @@ namespace TheElvenScrolls
             if (_input == null)
             {
                 _logger.LogInformation("No input specified. Reading default");
-               _input = _scribe.ReadInput(_settings.DefaultFilesSettings.Input);
+                _input = _scribe.ReadInput(_settings.DefaultFilesSettings.Input);
             }
 
             if (_template == null)
@@ -108,13 +107,18 @@ namespace TheElvenScrolls
                 _template = _scribe.ReadTemplate(_settings.DefaultFilesSettings.Template);
             }
 
-            var lineWidth = _template.ComputeLineWidth(_template.Middle);
-            var justified = _toolbox.Justify(_input, lineWidth);
+            IList<string> justifiedLines;
+            if (!_template.CheckConstantWidth())
+            {
+                justifiedLines = CreateVariableWidthJustifiedLines();
+            }
+            else
+            {
+                var lineWidth = _template.ComputePartMaxWidth(_template.Middle);
+                justifiedLines = _toolbox.Justify(_input, lineWidth).ToList();
+            }
 
-            _logger.LogInformation("Justification finished");
-            _logger.LogDebug("\n" + justified);
-
-            var scroll = _toolbox.CreateTemplate(justified, _template);
+            var scroll = _toolbox.CreateTemplate(justifiedLines, _template);
             _logger.LogInformation("Scroll ready:\n" + scroll);
 
             if (_outputPath == null)
@@ -125,6 +129,72 @@ namespace TheElvenScrolls
             _logger.LogInformation("Scroll saved under path: " + Directory.GetCurrentDirectory() + _outputPath);
 
             _menu.Wait();
+        }
+
+        private IList<string> CreateVariableWidthJustifiedLines()
+        {
+            if (!_settings.JustifierSettings.BreakOnlyOnEmptyLines)
+                _logger.LogWarning("Justifier BreakOnlyOnEmptyLines should be true for best results");
+
+            var justifiedLines = new List<string>();
+
+            var beginCapacity = _template.ComputeCapacity(_template.Begin);
+            var endCapacity = _template.ComputeCapacity(_template.End);
+
+            var left = _input;
+
+            var beginReady = false;
+            while (left.Length > 0 && !string.IsNullOrWhiteSpace(left))
+            {
+                if (_input.Length - left.Length < beginCapacity && !beginReady)
+                {
+                    // Begin
+                    AddLines(_template.Begin, justifiedLines, ref left);
+                    beginReady = true;
+                }
+                else if (_toolbox.PredictLength(left) <= endCapacity)
+                {
+                    // End
+                    AddLines(_template.End, justifiedLines, ref left);
+                }
+                else
+                {
+                    // Middle
+                    justifiedLines.Add(_toolbox.JustifyNextLine(ref left, _template.ComputePartMaxWidth(_template.Middle)));
+                }
+            }
+
+            return justifiedLines;
+        }
+
+        private void AddLines(string templatePart, List<string> justifiedLines, ref string left)
+        {
+            var lines = new List<string>();
+            var newLine = string.Empty;
+            foreach (var c in templatePart)
+            {
+                switch (c)
+                {
+                    case '\r':
+                        continue;
+                    case '\n':
+                        lines.Add(newLine);
+                        newLine = string.Empty;
+                        break;
+                    default:
+                        newLine += c;
+                        break;
+                }
+            }
+
+            foreach (var line in lines)
+            {
+                var width = _template.ComputeLineWidth(line);
+                if (width < 1)
+                    continue;
+
+                justifiedLines.Add(_toolbox.JustifyNextLine(ref left, width));
+            }
         }
 
         private void ChangeTemplate(object sender, PathChangedArgs e)

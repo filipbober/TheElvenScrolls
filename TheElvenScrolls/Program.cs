@@ -85,7 +85,9 @@ namespace TheElvenScrolls
 
             services.AddSingleton<IMenu, ConsoleMenu>();
 
-            services.AddTransient<IJustifier, Justifier.Justifier>();
+            services.AddSingleton<IJustifier, Justifier.Justifier>();
+            services.AddSingleton<IVariableWidthJustifier, Justifier.Justifier>();
+
             services.AddTransient<ITemplater, Templater.Templater>();
             services.AddTransient<IInputReader, InputReader>();
             services.AddTransient<ITemplateReader, TemplateReader>();
