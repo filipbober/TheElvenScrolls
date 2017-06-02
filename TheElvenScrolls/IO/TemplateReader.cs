@@ -72,7 +72,7 @@ namespace TheElvenScrolls.IO
         {
             var separator = _settings.PartSeparatorPattern;
 
-            if (line == separator)
+            if (line.Trim() == separator)
                 return true;
 
             return line.Length == separator.Length && line.StartsWith(separator);
