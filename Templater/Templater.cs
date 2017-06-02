@@ -41,6 +41,7 @@ namespace Templater
             var endReady = false;
 
             var endResult = string.Empty;
+            var endFillableLinesCount = CountFillableLines(endLines, template.Fill);
             while (_currentLineIdx < textLines.Count)
             {
                 string textLine;
@@ -57,7 +58,7 @@ namespace Templater
                     beginReady = true;
                 }
 
-                if (!endReady && textLines.Count - _currentLineIdx <= CountFillableLines(endLines, template.Fill))
+                if (!endReady && textLines.Count - _currentLineIdx <= endFillableLinesCount)
                 {
                     foreach (var templateLine in endLines)
                     {
@@ -75,6 +76,14 @@ namespace Templater
                     var templateLine = middleLines[middleLineIdx];
                     result += CreateLine(template.Fill, template.Blank, textLine, templateLine);
                     currentTemplateIdx++;
+                }
+            }
+
+            if (!endReady)
+            {
+                foreach (var templateLine in endLines)
+                {
+                    result += CreateLine(template.Fill, template.Blank, string.Empty, templateLine);
                 }
             }
 
