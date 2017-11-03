@@ -152,8 +152,8 @@ namespace TheElvenScrolls
                     AddLines(_template.Begin, justifiedLines, ref left);
                     beginReady = true;
                 }
-                else if (_toolbox.PredictLength(left) <= endCapacity)
-                {
+                else if (_toolbox.PredictLength(left) + PredictEmptyLinesLength(left) <= endCapacity)
+                {                
                     // End
                     AddLines(_template.End, justifiedLines, ref left);
                 }
@@ -195,6 +195,19 @@ namespace TheElvenScrolls
 
                 justifiedLines.Add(_toolbox.JustifyNextLine(ref left, width));
             }
+        }
+
+        private int PredictEmptyLinesLength(string text)
+        {
+            var result = 0;
+            var middleLineWidth = _template.ComputePartMaxWidth(_template.Middle);
+            foreach (var c in text)
+            {
+                if (c == '\n')
+                    result += middleLineWidth;
+            }
+
+            return result;
         }
 
         private void ChangeTemplate(object sender, PathChangedArgs e)

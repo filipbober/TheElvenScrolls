@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿// Copyright (C) 2017 Filip Cyrus Bober
+
+using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Linq;
 using Justifier.Abstractions;

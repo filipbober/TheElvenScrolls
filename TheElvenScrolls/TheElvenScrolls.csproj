@@ -9,9 +9,9 @@
     <PackageProjectUrl>https://github.com/filipbober/TheElvenScrolls</PackageProjectUrl>
     <ApplicationIcon>scroll.ico</ApplicationIcon>
     <Win32Resource />
-    <AssemblyVersion>2.0.1.0</AssemblyVersion>
-    <FileVersion>2.0.1.0</FileVersion>
-    <Version>2.0.1</Version>
+    <AssemblyVersion>2.0.2.0</AssemblyVersion>
+    <FileVersion>2.0.2.0</FileVersion>
+    <Version>2.0.2</Version>
     <Description>ASCII letter creation tool.</Description>
   </PropertyGroup>
 
