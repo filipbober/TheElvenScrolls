@@ -1,13 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26403.7
+VisualStudioVersion = 15.0.27004.2006
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TheElvenScrolls", "TheElvenScrolls\TheElvenScrolls.csproj", "{D9037611-8330-4E8A-A976-2B3F7B3D96D8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TheElvenScrolls", "TheElvenScrolls\TheElvenScrolls.csproj", "{D9037611-8330-4E8A-A976-2B3F7B3D96D8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Justifier", "Justifier\Justifier.csproj", "{F9763956-B286-4AB4-9D11-D260AE405081}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Justifier", "Justifier\Justifier.csproj", "{F9763956-B286-4AB4-9D11-D260AE405081}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Templater", "Templater\Templater.csproj", "{49876297-DEEF-4958-BFCB-B5A674B6170C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Templater", "Templater\Templater.csproj", "{49876297-DEEF-4958-BFCB-B5A674B6170C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -30,5 +30,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {48276B7F-9085-46F7-A1E7-0563D5954CB9}
 	EndGlobalSection
 EndGlobal
